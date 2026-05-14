@@ -1,13 +1,28 @@
-const express              = require('express');
-const router               = express.Router();
+const express               = require('express');
+const router                = express.Router();
 const { authenticateToken } = require('../middlewares/auth');
 const { requireRole }       = require('../middlewares/role');
 const controller            = require('../controllers/product.controller');
 
+// Public routes — no auth required
 router.get('/',    controller.getAll);
 router.get('/:id', controller.getById);
-router.post('/',   authenticateToken, requireRole('seller'), controller.create);
-router.put('/:id', authenticateToken, requireRole('seller'), controller.update);
-router.delete('/:id', authenticateToken, requireRole('seller'), controller.remove);
+
+// Protected routes — seller or admin only
+router.post('/',
+  authenticateToken,
+  requireRole('seller', 'admin'),
+  controller.create
+);
+router.put('/:id',
+  authenticateToken,
+  requireRole('seller', 'admin'),
+  controller.update
+);
+router.delete('/:id',
+  authenticateToken,
+  requireRole('seller', 'admin'),
+  controller.remove
+);
 
 module.exports = router;

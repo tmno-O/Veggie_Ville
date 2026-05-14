@@ -20,13 +20,13 @@ const getAll = async ({ keyword, category, size, minPrice, maxPrice } = {}) => {
 };
 
 /**
- * Get a single product by id
+ * Get a single non-expired product by id
  * @param {number} id
  * @returns {Promise<object>}
  */
 const getById = async (id) => {
   const [rows] = await pool.query(
-    'SELECT * FROM products WHERE id = ?',
+    'SELECT * FROM products WHERE id = ? AND best_before >= CURDATE()',
     [id]
   );
   if (rows.length === 0) throw new Error('Product not found');
@@ -34,61 +34,96 @@ const getById = async (id) => {
 };
 
 /**
- * Create a new product
+ * Create a new product and return the full product row
  * @param {{ seller_id, name, description, price, quantity, size, category, best_before }} data
- * @returns {Promise<{ id: number }>}
+ * @returns {Promise<object>}
  */
 const create = async ({ seller_id, name, description, price, quantity, size, category, best_before }) => {
   const [result] = await pool.query(
     `INSERT INTO products
        (seller_id, name, description, price, quantity, size, category, best_before)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    [seller_id, name, description || null, price, quantity || 0, size, category || null, best_before]
+    [seller_id, name, description ?? null, price, quantity, size, category ?? null, best_before]
   );
-  return { id: result.insertId };
+
+  const [rows] = await pool.query(
+    'SELECT * FROM products WHERE id = ?',
+    [result.insertId]
+  );
+  return rows[0];
 };
 
 /**
- * Update a product — seller must own it
+ * Partially update a product — seller must own it
+ * Only fields present in the request body are updated.
+ * Column names come from a hardcoded allowlist — values use ? placeholders.
  * @param {number} id
  * @param {number} seller_id  from JWT
- * @param {{ name, description, price, quantity, size, category, best_before }} fields
- * @returns {Promise<{ message: string }>}
+ * @param {object} fields
+ * @returns {Promise<object>}  updated product row
  */
-const update = async (id, seller_id, { name, description, price, quantity, size, category, best_before }) => {
-  const [rows] = await pool.query(
-    'SELECT seller_id FROM products WHERE id = ?',
-    [id]
+const update = async (id, seller_id, fields) => {
+  const [existing] = await pool.query(
+    'SELECT * FROM products WHERE id = ? AND seller_id = ?',
+    [id, seller_id]
   );
-  if (rows.length === 0) throw new Error('Product not found');
-  if (rows[0].seller_id !== seller_id) throw new Error('Forbidden');
+  if (existing.length === 0) {
+    throw new Error('Product not found or not authorized');
+  }
 
+  // Column names from hardcoded allowlist — safe to interpolate
+  const allowed = ['name', 'description', 'price', 'quantity', 'size', 'category', 'best_before'];
+  const updates = [];
+  const params  = [];
+
+  for (const key of allowed) {
+    if (fields[key] !== undefined) {
+      updates.push(`${key} = ?`);
+      params.push(fields[key]);
+    }
+  }
+
+  if (updates.length === 0) {
+    throw new Error('No valid fields to update');
+  }
+
+  params.push(id);
   await pool.query(
-    `UPDATE products
-     SET name = ?, description = ?, price = ?, quantity = ?,
-         size = ?, category = ?, best_before = ?
-     WHERE id = ?`,
-    [name, description || null, price, quantity, size, category || null, best_before, id]
+    `UPDATE products SET ${updates.join(', ')} WHERE id = ?`,
+    params
   );
-  return { message: 'Product updated' };
+
+  const [updated] = await pool.query(
+    'SELECT * FROM products WHERE id = ?',
+    [id]
+  );
+  return updated[0];
 };
 
 /**
- * Delete a product — seller must own it
+ * Delete a product — admin can delete any, seller only owns
  * @param {number} id
  * @param {number} seller_id  from JWT
+ * @param {string} role       from JWT
  * @returns {Promise<{ message: string }>}
  */
-const remove = async (id, seller_id) => {
-  const [rows] = await pool.query(
-    'SELECT seller_id FROM products WHERE id = ?',
-    [id]
-  );
-  if (rows.length === 0) throw new Error('Product not found');
-  if (rows[0].seller_id !== seller_id) throw new Error('Forbidden');
-
-  await pool.query('DELETE FROM products WHERE id = ?', [id]);
-  return { message: 'Product deleted' };
+const remove = async (id, seller_id, role) => {
+  if (role === 'admin') {
+    const [result] = await pool.query(
+      'DELETE FROM products WHERE id = ?',
+      [id]
+    );
+    if (result.affectedRows === 0) throw new Error('Product not found');
+  } else {
+    const [result] = await pool.query(
+      'DELETE FROM products WHERE id = ? AND seller_id = ?',
+      [id, seller_id]
+    );
+    if (result.affectedRows === 0) {
+      throw new Error('Product not found or not authorized');
+    }
+  }
+  return { message: 'Product deleted successfully' };
 };
 
 module.exports = { getAll, getById, create, update, remove };
