@@ -1,5 +1,10 @@
 const pool = require('../config/db');
 
+const mapUser = (user) => ({
+  ...user,
+  is_active: Boolean(user.is_active)
+});
+
 /**
  * Get all users — password_hash intentionally excluded
  * @param {object} filters - optional { role, is_active }
@@ -38,7 +43,7 @@ const getAllUsers = async (filters = {}) => {
   sql += ' ORDER BY created_at DESC';
 
   const [rows] = await pool.query(sql, params);
-  return rows;
+  return rows.map(mapUser);
 };
 
 /**
@@ -58,7 +63,7 @@ const getUserById = async (id) => {
   if (rows.length === 0) {
     throw new Error('User not found');
   }
-  return rows[0];
+  return mapUser(rows[0]);
 };
 
 /**
@@ -97,9 +102,9 @@ const updateUserStatus = async (
        id, name, email, role,
        is_active, created_at
      FROM users WHERE id = ?`,
-    [target_id]
+      [target_id]
   );
-  return updated[0];
+  return mapUser(updated[0]);
 };
 
 /**
@@ -139,9 +144,9 @@ const updateUserRole = async (
        id, name, email, role,
        is_active, created_at
      FROM users WHERE id = ?`,
-    [target_id]
+      [target_id]
   );
-  return updated[0];
+  return mapUser(updated[0]);
 };
 
 /**
@@ -149,16 +154,16 @@ const updateUserRole = async (
  * @returns {Promise<object>} counts by role and status
  */
 const getUserStats = async () => {
-  const [stats] = await pool.query(`
-    SELECT
-      COUNT(*)                              AS total,
-      SUM(role = 'buyer')                   AS buyers,
-      SUM(role = 'seller')                  AS sellers,
-      SUM(role = 'admin')                   AS admins,
-      SUM(is_active = 1)                    AS active,
-      SUM(is_active = 0)                    AS banned
-    FROM users
-  `);
+  const [stats] = await pool.query(
+    'SELECT ' +
+      'COUNT(*) AS total, ' +
+      'SUM(role = "buyer") AS buyers, ' +
+      'SUM(role = "seller") AS sellers, ' +
+      'SUM(role = "admin") AS admins, ' +
+      'SUM(is_active = 1) AS active, ' +
+      'SUM(is_active = 0) AS banned ' +
+    'FROM users'
+  );
   return stats[0];
 };
 
