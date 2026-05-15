@@ -1,14 +1,14 @@
 const express = require('express');
 const router  = express.Router();
-const { authenticateToken } = require('../middlewares/auth');
-const { requireRole }       = require('../middlewares/role');
+const authenticate = require('../middlewares/auth');
+const requireRole       = require('../middlewares/role');
 const controller = require('../controllers/pickupSlot.controller');
 
 // GET /api/pickup-slots
 // Authenticated users can view available slots
 router.get(
   '/',
-  authenticateToken,
+  authenticate,
   controller.getAll
 );
 
@@ -16,7 +16,7 @@ router.get(
 // Admin only — create new slot
 router.post(
   '/',
-  authenticateToken,
+  authenticate,
   requireRole('admin'),
   controller.create
 );
@@ -25,7 +25,7 @@ router.post(
 // Admin only — delete slot
 router.delete(
   '/:id',
-  authenticateToken,
+  authenticate,
   requireRole('admin'),
   controller.remove
 );
