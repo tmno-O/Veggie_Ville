@@ -52,6 +52,14 @@ const create = async ({ admin_id, slot_start,
     'SELECT * FROM pickup_slots WHERE id = ?',
     [result.insertId]
   );
+  // Emit slot created to clients/admins
+  try{
+    const io = require('../lib/socket').get();
+    if(io){
+      io.emit('pickup-slot:created', rows[0]);
+      io.to('admins').emit('pickup-slot:created', rows[0]);
+    }
+  }catch(e){}
   return rows[0];
 };
 
@@ -79,6 +87,14 @@ const remove = async (id) => {
   if (result.affectedRows === 0) {
     throw new Error('Pickup slot not found');
   }
+  // Emit slot removed
+  try{
+    const io = require('../lib/socket').get();
+    if(io){
+      io.emit('pickup-slot:removed', { id: Number(id) });
+      io.to('admins').emit('pickup-slot:removed', { id: Number(id) });
+    }
+  }catch(e){}
   return { message: 'Pickup slot deleted successfully' };
 };
 

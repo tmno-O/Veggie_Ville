@@ -70,4 +70,20 @@ const login = async (req, res) => {
   }
 };
 
-module.exports = { register, login };
+/**
+ * GET /api/auth/me
+ * Return decoded JWT payload for current user
+ */
+const me = async (req, res) => {
+  try {
+    if (!req.user) return res.status(401).json({ message: 'Unauthorized' });
+    // Only expose safe fields
+    const { id, role } = req.user;
+    res.json({ id, role });
+  } catch (err) {
+    console.error('[auth.controller] me:', err);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+module.exports = { register, login, me };

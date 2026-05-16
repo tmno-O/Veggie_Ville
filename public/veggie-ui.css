@@ -1,0 +1,64 @@
+:root{
+  /* Tuned to match color_scheme.webp swatches (garden green scale + accents) */
+  --vv-primary:#2E7D32; /* garden green 700 */
+  --vv-primary-500:#4CAF50; /* garden green 500 */
+  --vv-accent:#C1440E; /* earth terracotta */
+  --vv-amber:#F59E0B; /* harvest amber */
+  --vv-info:#2196F3; /* sky blue */
+  --vv-error:#E53935; /* fresh red */
+  --vv-muted:#F7F7F7;
+}
+
+/* Override primary button look to match color scheme */
+.btn{
+  background:var(--vv-primary) !important;
+  border-color:var(--vv-primary) !important;
+  color:#fff !important;
+}
+.btn.ghost{
+  background:#fff !important;
+  color:var(--vv-primary) !important;
+  border-color:var(--vv-primary) !important;
+}
+.btn.danger{ background:#fff !important; color:var(--vv-error) !important; border-color:var(--vv-error) !important }
+.fab{ background:var(--vv-primary) !important }
+
+/* Cart badge in topbar / icons */
+.vv-cart-badge{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-width:18px;height:18px;padding:0 6px;border-radius:12px;background:var(--vv-amber);color:#111;font-size:11px;font-weight:700;margin-left:6px;border:1px solid rgba(0,0,0,0.06)
+}
+
+/* Toast */
+.vv-toast{
+  position:fixed;right:18px;bottom:24px;background:#111;color:#fff;padding:10px 14px;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.24);opacity:0;transform:translateY(8px);transition:all .28s ease;z-index:9999;font-size:13px
+}
+.vv-toast.show{opacity:1;transform:translateY(0)}
+
+/* subtle focus styles */
+.btn:focus, .select:focus, .pill:focus{outline:3px solid rgba(46,125,50,0.12);outline-offset:2px}
+
+/* small helpers */
+.vv-hidden{display:none !important}
+
+/* responsive tweak: ensure desktop topbar icons align */
+.nav-bar .icon{position:relative}
+.nav-bar .icon .vv-cart-badge{position:absolute;right:-8px;top:-6px}
+
+/* Accessible live region for screen reader announcements */
+.vv-live{
+  position:fixed;left:0;top:-9999px;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0;padding:0;margin:0
+}
+
+/* aria-alert dialog visual (fallback) */
+.vv-alert{
+  position:fixed;left:50%;top:20%;transform:translateX(-50%);background:#fff;color:#111;border:1px solid rgba(0,0,0,.08);padding:14px 18px;border-radius:8px;box-shadow:0 12px 36px rgba(0,0,0,.18);z-index:10000;max-width:480px;display:none
+}
+.vv-alert.show{display:block}
+
+/* Modal backdrop wrapper (created dynamically) */
+.vv-modal-backdrop{display:none}
+.vv-modal{max-width:720px}
+
+/* Cart drawer (fallback styling if inline removed) */
+.vv-cart-drawer{right:0;top:0;height:100%;width:320px;background:#fff;border-left:1px solid rgba(0,0,0,.06);box-shadow:-24px 0 48px rgba(0,0,0,.12);z-index:9998;padding:16px;display:flex;flex-direction:column;gap:12px;transform:translateX(100%);transition:transform .28s ease}
