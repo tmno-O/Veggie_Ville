@@ -19,6 +19,7 @@
     });
     localStorage.setItem('vv_cart', String(cartCount));
   }
+  window.VVBadge = renderCartBadge;
   renderCartBadge();
 
   // Accessible live region (polite) and visual alert fallback
@@ -196,14 +197,13 @@
   }
 
   // attach cart toggle to cart icons
-  function setupCartIcon(){
-    $all('.nav-bar .icon, .bottom-nav .b .ic').forEach(ic=>{
-      if((ic.textContent||'').includes('🛒')){
-        ic.style.cursor='pointer'; ic.addEventListener('click', e=>{ e.preventDefault(); toggleCart(); });
-      }
-    });
-  }
-  setupCartIcon();
+document.addEventListener('click', e => {
+    const ic = e.target.closest('.nav-bar .icon, .bottom-nav .b .ic');
+    if (ic && (ic.textContent||'').includes('🛒')) {
+      e.preventDefault();
+      toggleCart();
+    }
+  });
   // try fetch cart on load
   window.addEventListener('load', ()=>{ fetchCart(); });
 

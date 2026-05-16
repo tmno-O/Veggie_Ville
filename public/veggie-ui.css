@@ -11,16 +11,16 @@
 
 /* Override primary button look to match color scheme */
 .btn{
-  background:var(--vv-primary) !important;
-  border-color:var(--vv-primary) !important;
-  color:#fff !important;
+  background:var(--vv-primary) ;
+  border-color:var(--vv-primary) ;
+  color:#fff ;
 }
 .btn.ghost{
-  background:#fff !important;
-  color:var(--vv-primary) !important;
-  border-color:var(--vv-primary) !important;
+  background:#fff ;
+  color:var(--vv-primary) ;
+  border-color:var(--vv-primary) ;
 }
-.btn.danger{ background:#fff !important; color:var(--vv-error) !important; border-color:var(--vv-error) !important }
+.btn.danger{ background:#fff ; color:var(--vv-error) !important; border-color:var(--vv-error) !important }
 .fab{ background:var(--vv-primary) !important }
 
 /* Cart badge in topbar / icons */

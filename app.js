@@ -8,7 +8,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
-app.get('/', (_req, res) => res.sendFile(path.join(__dirname, 'Wireframes.html')));
+app.get('/', (_req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
 // Health check
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
@@ -33,9 +33,12 @@ app.get(
   orderController.getAllOrders
 );
 
+// Ignore favicon requests to prevent 500 errors
+app.get('/favicon.ico', (req, res) => res.status(204).end());
+
 // SPA fallback — serve the wireframe shell for any non-API route
 app.get(/^(?!\/api|\/socket\.io|\/veggie-ui\.css|\/veggie-ui\.js|\/modal\.js|\/public).*/, (req, res) => {
-  res.sendFile(path.join(__dirname, 'Wireframes.html'));
+  res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // Global error handler — never expose stack trace
