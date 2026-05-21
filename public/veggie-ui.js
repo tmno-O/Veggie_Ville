@@ -61,7 +61,30 @@
     return fetch(url, opts);
   }
 
-  window.VVAuth = { setToken: setAuthToken, fetchMe };
+  let vvSocket = null;
+  function connectSocket(){
+    try{
+      if(typeof io === 'undefined') return;
+      if(vvSocket) vvSocket.disconnect();
+      const token = localStorage.getItem('vv_token');
+      vvSocket = io({ auth: { token } });
+      vvSocket.on('connect', ()=>{ console.debug('Socket connected'); });
+      vvSocket.on('connect_error', (err)=>{ console.debug('Socket connect error', err); });
+      vvSocket.on('cart:update', data=>{
+        try{
+          if(data && Array.isArray(data.items)){
+            lastCartData = data;
+            cartCount = data.count || data.items.reduce((sum, item)=>sum + Number(item.cart_quantity || item.quantity || 0), 0);
+            renderCartBadge();
+            const d = document.querySelector('.vv-cart-drawer');
+            if(d && d.style.transform === 'translateX(0%)') renderCart(data);
+          }
+        }catch(e){ console.error('cart:update handling error', e); }
+      });
+    }catch(e){ console.warn('Socket init failed', e); }
+  }
+
+  window.VVAuth = { setToken: setAuthToken, fetchMe, authFetch, connectSocket };
   // convenience: perform login and persist token
   window.VVAuth.login = async (email, password) => {
     const res = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
@@ -69,7 +92,7 @@
       const txt = await res.text(); throw new Error(txt||res.statusText);
     }
     const data = await res.json();
-    if(data && data.token){ setAuthToken(data.token); }
+    if(data && data.token){ setAuthToken(data.token); connectSocket(); }
     return data;
   };
 
@@ -113,7 +136,10 @@
       const data = await res.json();
       // expected shape from server: { items: [...], total: number, count: number }
       if(data && Array.isArray(data.items)) { renderCart(data); lastCartData = data; }
-      if(data && typeof data.count === 'number') { cartCount = data.count; renderCartBadge(); }
+      if(data && Array.isArray(data.items)) {
+        cartCount = data.items.reduce((sum, item)=>sum + Number(item.cart_quantity || item.quantity || 0), 0);
+        renderCartBadge();
+      } else if(data && typeof data.count === 'number') { cartCount = data.count; renderCartBadge(); }
     }catch(err){
       // server not available — fallback to local
       console.debug('Could not fetch cart', err);
@@ -129,7 +155,8 @@
       const price = it.price || 0;
       const subtotal = it.subtotal || (price * qty) || 0;
       const el = document.createElement('div'); el.style.cssText='display:grid;grid-template-columns:48px 1fr auto;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid rgba(0,0,0,.04)';
-      el.innerHTML = `<div class="img-ph" style="width:48px;height:48px;aspect-ratio:1/1">img</div><div><div style="font-weight:600">${it.name}</div><div class="small mono">฿${price} × ${qty}</div></div><div style="text-align:right"><div class="mono">฿${subtotal}</div><div style="margin-top:6px"><button class="btn ghost sm vv-remove-item" data-cart-item="${it.cart_item_id || ''}">Remove</button></div></div>`;
+      const esc = window.VVEscape || ((value='') => String(value).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])));
+      el.innerHTML = `<div class="img-ph" style="width:48px;height:48px;aspect-ratio:1/1">img</div><div><div style="font-weight:600">${esc(it.name)}</div><div class="small mono">฿${Number(price)} × ${Number(qty)}</div></div><div style="text-align:right"><div class="mono">฿${Number(subtotal)}</div><div style="margin-top:6px"><button class="btn ghost sm vv-remove-item" data-cart-item="${esc(it.cart_item_id || '')}">Remove</button></div></div>`;
       body.appendChild(el);
     });
     const totalEl = d.querySelector('.vv-cart-total .mono');
@@ -166,7 +193,7 @@
           if(!res.ok){ const txt = await res.text(); throw new Error(txt||res.statusText); }
           const data = await res.json();
           window.VVModal && window.VVModal.closeModal ? window.VVModal.closeModal() : null;
-          window.VVModal && window.VVModal.openModal ? window.VVModal.openModal(`<div style="font-weight:700">Order placed!</div><div class="small mono">ORD-${data.order_id}</div><div style="margin-top:12px"><button class="btn" onclick="window.location.reload()">View orders</button></div>`) : alert('Order placed: ORD-'+data.order_id);
+          window.VVModal && window.VVModal.openModal ? window.VVModal.openModal(`<div style="font-weight:700">Order placed!</div><div class="small mono">ORD-${data.order_id}</div><div style="margin-top:12px"><button class="btn" data-route="/orders">View orders</button></div>`) : alert('Order placed: ORD-'+data.order_id);
           // refresh cart
           await fetchCart();
         }catch(err){
@@ -208,29 +235,8 @@ document.addEventListener('click', e => {
   window.addEventListener('load', ()=>{ fetchCart(); });
 
   // Use Socket.IO for server-pushed cart updates if available
-  try{
-    if(typeof io !== 'undefined'){
-      const token = localStorage.getItem('vv_token');
-      const socket = io({ auth: { token } });
-      socket.on('connect', ()=>{ console.debug('Socket connected'); });
-      socket.on('connect_error', (err)=>{ console.debug('Socket connect error', err); });
-      socket.on('cart:update', data=>{
-        try{
-          if(data && Array.isArray(data.items)){
-            lastCartData = data;
-            cartCount = data.count || data.items.length || 0;
-            renderCartBadge();
-            // update drawer if open
-            const d = document.querySelector('.vv-cart-drawer');
-            if(d && d.style.transform === 'translateX(0%)') renderCart(data);
-          }
-        }catch(e){ console.error('cart:update handling error', e); }
-      });
-    } else {
-      // fallback to polling if socket.io client not available
-      setInterval(()=>{ fetchCart(); }, 15000);
-    }
-  }catch(e){ console.warn('Socket init failed, falling back to polling', e); setInterval(()=>{ fetchCart(); }, 15000); }
+  if(typeof io !== 'undefined') connectSocket();
+  else setInterval(()=>{ fetchCart(); }, 15000);
 
   // Delegate remove-from-cart actions (DELETE /api/cart/:id)
   document.addEventListener('click', async e=>{
@@ -267,6 +273,7 @@ document.addEventListener('click', e => {
       if(btn.classList.contains('disabled')){ announce('Action unavailable'); return }
       const txt = (btn.textContent||'').trim();
       // Add to cart behavior: prefer server call, infer product from nearest .pcard
+      if(btn.matches('.vv-place-order, .vv-delete-product, .vv-delete-slot, .vv-remove-item')) return;
       if(/Add to Cart|^Add$|Add /i.test(txt)){
         const card = btn.closest('.pcard');
         if(card){
@@ -274,6 +281,9 @@ document.addEventListener('click', e => {
           cartCount = Number(localStorage.getItem('vv_cart')||0) + 1; renderCartBadge();
           const item = { product_id: card.dataset.id || card.dataset.name, qty: 1 };
           postAddToCart(item);
+        } else if(btn.dataset.productId) {
+          cartCount = Number(localStorage.getItem('vv_cart')||0) + 1; renderCartBadge();
+          postAddToCart({ product_id: btn.dataset.productId, qty: 1 });
         } else {
           cartCount = Number(localStorage.getItem('vv_cart')||0) + 1; renderCartBadge(); announce('Added to cart');
         }
@@ -298,7 +308,12 @@ document.addEventListener('click', e => {
       $all('.pill').forEach(p=>p.classList.remove('active'));
       pill.classList.add('active');
       const cat = pill.textContent.trim();
-      filterByCategory(cat);
+      if(window.VVLoadProducts){
+        window.VVLoadProducts(cat.toLowerCase() === 'all' ? {} : { category: cat })
+          .catch(err => console.error('Product filter failed', err));
+      } else {
+        filterByCategory(cat);
+      }
       announce('Filter: '+cat);
     }
 
@@ -317,12 +332,26 @@ document.addEventListener('click', e => {
     const q = span.closest('.qty'); const n = q.querySelector('.n'); if(!n) return;
     let val = Number(n.textContent)||0;
     if(span.textContent.trim()==='+'){ val++; }
-    else if(span.textContent.trim()==='−' || span.textContent.trim()==='-'){ val = Math.max(0,val-1); }
+    else if(span.textContent.trim()==='−' || span.textContent.trim()==='-'){ val = Math.max(1,val-1); }
     n.textContent = val;
+    const row = span.closest('.vv-cart-row');
+    if(row?.dataset.cartItem){
+      authFetch(`/api/cart/${row.dataset.cartItem}`, {
+        method:'PUT',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ quantity: val })
+      }).then(fetchCart).catch(err => {
+        announce('Unable to update quantity');
+        console.error('Quantity update failed', err);
+      });
+    }
   });
 
-  // keyboard accessible pills
-  $all('.pill').forEach(p=>{ p.tabIndex=0; p.addEventListener('keydown', ev=>{ if(ev.key==='Enter' || ev.key===' ') p.click(); }) });
+  // keyboard accessible pills, including pills injected after SPA navigation
+  document.addEventListener('keydown', ev=>{
+    const p = ev.target.closest && ev.target.closest('.pill');
+    if(p && (ev.key==='Enter' || ev.key===' ')){ ev.preventDefault(); p.click(); }
+  });
 
   // nav smooth scroll
   $all('a[data-target]').forEach(a=>a.addEventListener('click', e=>{

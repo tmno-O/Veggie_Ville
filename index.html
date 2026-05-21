@@ -10,18 +10,18 @@
     */
     :root {
       --bg:#FFFFFF;
-      --panel:#F7F7F7;
-      --line:#D0D0D0;
-      --line-2:#BFBFBF;
-      --ink:#111111;
-      --ink-2:#666666;
-      --ink-3:#9A9A9A;
-      --error:#E53935;
-      --success:#2E7D32;
-      --primary:#4CAF50; 
-      --accent:#C1440E; 
+      --panel:#F5F5F4;
+      --line:#D6D3D1;
+      --line-2:#A8A29E;
+      --ink:#1C1917;
+      --ink-2:#57534E;
+      --ink-3:#A8A29E;
+      --error:#DC2626;
+      --success:#15803D;
+      --primary:#16A34A; 
+      --accent:#B83220; 
       --warning:#F59E0B; 
-      --callout:#F9FAEB;
+      --callout:#FFF7ED;
     }
     
 *{box-sizing:border-box}
@@ -364,43 +364,14 @@
 </style>
   <link rel="stylesheet" href="/veggie-ui.css">
 </head>
-<body>
-<div class="app">
-  <aside class="sidebar">
-    <div class="brand">Veggie Ville<small>Community Garden Share — Wireframes v1 · May 2026</small></div>
-    <nav class="nav" id="nav"></nav>
-    <div class="legend">
-      <b>Legend</b>
-      <ul>
-        <li>🔒 JWT required</li>
-        <li>👑 Admin role required</li>
-        <li>⚡ Business logic callout (dashed)</li>
-        <li>→ API endpoint reference</li>
-        <li><span style="color:var(--error)">━</span> Error / validation state</li>
-      </ul>
-    </div>
-  </aside>
-
-  <main>
-    <div class="doc-head">
-      <h1>Veggie Ville — Mid-fidelity Wireframes</h1>
-      <p>12 pages × (mobile 375px + desktop 1440px). Grayscale only, red <span class="mono">#E53935</span> reserved for errors. Every placeholder is labeled. Business logic and API endpoints are annotated inline. Hand off to frontend as the implementation reference.</p>
-    </div>
-    <div id="pages"></div>
-  </main>
-</div>
-    
-  </style>
-  <link rel="stylesheet" href="/veggie-ui.css">
-</head>
 <body style="margin:0; padding:0; background:var(--bg);">
 
   <main id="app-root"></main>
 
   <script src="/socket.io/socket.io.js"></script>
   <script src="/components.js"></script>
-  <script src="/router.js"></script>
   <script src="/modal.js"></script>
   <script src="/veggie-ui.js"></script>
+  <script src="/router.js"></script>
 </body>
 </html>

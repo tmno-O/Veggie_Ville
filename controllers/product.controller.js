@@ -33,6 +33,19 @@ const getById = async (req, res) => {
 };
 
 /**
+ * GET /api/products/mine
+ */
+const getMine = async (req, res) => {
+  try {
+    const products = await productService.getBySeller(req.user.id);
+    res.json(products);
+  } catch (err) {
+    console.error('[product.controller] getMine:', err);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+/**
  * POST /api/products
  */
 const create = async (req, res) => {
@@ -137,4 +150,4 @@ const remove = async (req, res) => {
   }
 };
 
-module.exports = { getAll, getById, create, update, remove };
+module.exports = { getAll, getById, getMine, create, update, remove };

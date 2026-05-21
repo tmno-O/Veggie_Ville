@@ -1,3 +1,8 @@
+  const escapeHtml = (value='') => String(value).replace(/[&<>"']/g, ch => ({
+    '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
+  }[ch]));
+  window.VVEscape = escapeHtml;
+
   // ---------- reusable wireframe fragments ----------
   const navBarMobile = `
     <div class="nav-bar">
@@ -50,7 +55,7 @@
     </div>`;
 
   const productCard = (opts={}) => {
-    const {size='M', exp='2027-08-12', expDanger=false, name='Cherry tomato', price='฿120', addBtn=true, id=null} = opts;
+    const {size='M', exp='2027-08-12', expDanger=false, name='Cherry tomato', price='฿120', addBtn=true, id=null, category: explicitCategory=null} = opts;
     // infer category from name when not explicitly provided
     const nl = (name||'').toLowerCase();
     let category = 'Vegetable';
@@ -58,18 +63,25 @@
     else if(/honey/.test(nl)) category = 'Honey';
     else if(/basil|mint|cilantro|herb|oregano|parsley|thyme|sage/.test(nl)) category = 'Herb';
     else if(/strawberry|apple|banana|berry|lemon|lime|orange/.test(nl)) category = 'Fruit';
+    if(explicitCategory) category = explicitCategory;
     const slug = id || nl.replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
+    const safeName = escapeHtml(name);
+    const safeSize = escapeHtml(size);
+    const safeCategory = escapeHtml(category);
+    const safePrice = escapeHtml(price);
+    const safeExp = escapeHtml(exp);
+    const safeId = escapeHtml(slug);
     return `
-      <div class="pcard" data-id="${slug}" data-name="${name}" data-category="${category}" data-size="${size}" data-price="${price}" data-exp="${exp}">
+      <div class="pcard" data-id="${safeId}" data-name="${safeName}" data-category="${safeCategory}" data-size="${safeSize}" data-price="${safePrice}" data-exp="${safeExp}">
         <div class="img-ph" style="border-radius:0;border-left:none;border-right:none;border-top:none">[IMG 16:9]</div>
         <div class="body">
-          <div class="name">${name}</div>
+          <div class="name">${safeName}</div>
           <div class="meta">
-            <span class="badge">${size}</span>
-            <span class="tag ${expDanger?'danger':''}" title="best_before">⏳ ${exp}</span>
+            <span class="badge">${safeSize}</span>
+            <span class="tag ${expDanger?'danger':''}" title="best_before">⏳ ${safeExp}</span>
           </div>
           <div class="row between">
-            <div class="price">${price}</div>
+            <div class="price">${safePrice}</div>
             ${addBtn?'<button class="btn sm">Add</button>':''}
           </div>
         </div>
@@ -425,7 +437,7 @@
   // ============== PAGE 6 — Cart ==============
   pages.push({
     id:'p6', name:'Cart', auth:'buyer',
-    apis:'GET /api/cart · GET /api/pickup-slots?available=true · PATCH /api/cart/items/:id',
+    apis:'GET /api/cart · GET /api/pickup-slots · PUT /api/cart/:id',
     mobile:`
       ${navBarMobile}
       <div class="row between"><div class="h1">My cart</div><span class="small mono">3 items</span></div>
@@ -460,7 +472,7 @@
       <button class="btn full">Proceed to checkout</button>
       <div class="small mono" style="color:var(--ink-3)">// disabled state shown below ↓</div>
       <button class="btn full disabled">Proceed to checkout (select pickup first)</button>
-      ${api('PATCH /api/cart/items/:id · PUT /api/cart/pickup-slot')}
+      ${api('PUT /api/cart/:id · POST /api/orders { pickup_slot_id, items }')}
     `,
     desktop:`
       ${navBarDesktop}
@@ -683,7 +695,7 @@
   // ============== PAGE 9 — Seller Dashboard ==============
   pages.push({
     id:'p9', name:'Seller Dashboard', auth:'seller',
-    apis:'GET /api/seller/stats · GET /api/seller/listings · GET /api/seller/orders',
+    apis:'GET /api/products · GET /api/orders · seller view filters client-side by JWT user id',
     mobile:`
       ${navBarMobile}
       <div class="h1">Seller dashboard</div>
@@ -713,7 +725,7 @@
       </div>
       <div class="fab">+</div>
       ${note('[FAB] floating action — New listing')}
-      ${api('GET /api/seller/listings')}
+      ${api('GET /api/products')}
       ${bottomNav}
     `,
     desktop:`
@@ -760,7 +772,7 @@
               </tbody>
             </table>
           </div>
-          ${api('GET /api/seller/listings · GET /api/seller/stats')}
+          ${api('GET /api/products')}
         </div>
       </div>
       ${footerFull}
@@ -770,7 +782,7 @@
   // ============== PAGE 10 — Create / Edit Listing ==============
   pages.push({
     id:'p10', name:'Create / Edit Listing', auth:'seller',
-    apis:'POST /api/seller/listings · PATCH /api/seller/listings/:id',
+    apis:'POST /api/products · PUT /api/products/:id',
     mobile:`
       ${navBarMobile}
       <div class="h1">New listing</div>
@@ -799,7 +811,7 @@
         <button class="btn full">Save listing</button>
         <button class="btn ghost full">Cancel</button>
       </div>
-      ${api('POST /api/seller/listings { name, price, qty, size, category, best_before, image } · multipart')}
+      ${api('POST /api/products { name, description, price, quantity, size, category, best_before }')}
       ${callout('seller_id pulled from JWT server-side — ignored if present in form body.','⚡ seller_id from JWT — never from form')}
     `,
     desktop:`
@@ -833,7 +845,7 @@
               <div class="small mono" style="color:var(--ink-3)">LIVE PREVIEW — how buyers will see it</div>
               ${productCard({name:'Heirloom tomato — Sungold',size:'M',exp:'2026-05-10',expDanger:true,price:'฿180'})}
             </div>
-            ${api('POST /api/seller/listings (multipart)')}
+            ${api('POST /api/products (JSON)')}
           </div>
         </div>
       </div>
@@ -844,7 +856,7 @@
   // ============== PAGE 11 — Admin Dashboard ==============
   pages.push({
     id:'p11', name:'Admin Dashboard', auth:'admin',
-    apis:'GET /api/admin/stats · GET /api/admin/orders?limit=5 · GET /api/admin/users?recent=true',
+    apis:'GET /api/admin/users/stats · GET /api/admin/orders · GET /api/admin/users',
     mobile:`
       ${navBarMobile.replace('🛒','👑')}
       <div class="row" style="gap:6px"><div class="h1">Admin</div><span class="badge" style="background:#111;color:#fff;border-color:#111">ADMIN</span></div>
@@ -942,7 +954,7 @@
   // ============== PAGE 12 — Admin Manage Pickup Slots ==============
   pages.push({
     id:'p12', name:'Admin · Manage Pickup Slots', auth:'admin',
-    apis:'GET /api/admin/pickup-slots · POST /api/admin/pickup-slots · DELETE /api/admin/pickup-slots/:id',
+    apis:'GET /api/pickup-slots · POST /api/pickup-slots · DELETE /api/pickup-slots/:id',
     mobile:`
       ${navBarMobile.replace('🛒','👑')}
       <div class="h1">Pickup slots</div>
@@ -975,7 +987,7 @@
           <div class="row" style="gap:8px"><button class="btn">Create slot</button><button class="btn ghost">Cancel</button></div>
         </div>
       </div>
-      ${api('POST /api/admin/pickup-slots { date, start, end, max_orders }')}
+      ${api('POST /api/pickup-slots { slot_start, slot_end, max_orders }')}
     `,
     desktop:`
       ${navBarDesktopAdmin}
@@ -1014,7 +1026,7 @@
                 </tbody>
               </table>
             </div>
-            ${api('GET /api/admin/pickup-slots')}
+            ${api('GET /api/pickup-slots')}
           </div>
           <div class="surface stack-8" style="position:sticky;top:8px">
             <div class="h2">Add pickup slot</div>
@@ -1027,9 +1039,13 @@
             <div class="callout error"><span class="pin">✗</span><div><span class="lbl">ERROR EXAMPLE</span>end (08:00) ≤ start (09:00)</div></div>
             <div class="input ok"><label>[INPUT number] Max orders *</label><div class="field">10</div><div class="help mono">must be &gt; 0</div></div>
             <div class="row" style="gap:8px"><button class="btn">Create slot</button><button class="btn ghost">Reset</button></div>
-            ${api('POST /api/admin/pickup-slots')}
+            ${api('POST /api/pickup-slots')}
           </div>
         </div>
       </div>
     `
   });
+
+  window.pages = pages;
+  window.productCard = productCard;
+  window.pills = pills;
