@@ -34,6 +34,19 @@ const getById = async (id) => {
 };
 
 /**
+ * Get products owned by one seller, including expired or out-of-stock rows.
+ * @param {number} seller_id
+ * @returns {Promise<Array>}
+ */
+const getBySeller = async (seller_id) => {
+  const [rows] = await pool.query(
+    'SELECT * FROM products WHERE seller_id = ? ORDER BY created_at DESC',
+    [seller_id]
+  );
+  return rows;
+};
+
+/**
  * Create a new product and return the full product row
  * @param {{ seller_id, name, description, price, quantity, size, category, best_before }} data
  * @returns {Promise<object>}
@@ -126,4 +139,4 @@ const remove = async (id, seller_id, role) => {
   return { message: 'Product deleted successfully' };
 };
 
-module.exports = { getAll, getById, create, update, remove };
+module.exports = { getAll, getById, getBySeller, create, update, remove };

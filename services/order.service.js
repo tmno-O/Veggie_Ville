@@ -89,6 +89,16 @@ const checkout = async ({ buyer_id, pickup_slot_id, items }) => {
     // ── STEP 6: Commit everything ──────────────────────────
     await conn.commit();
 
+    // Notify buyer and admins about new order via Socket.IO
+    try{
+      const io = require('../lib/socket').get();
+      if(io){
+        const payload = { order_id, total: Number(total.toFixed(2)), pickup_slot_id, item_count: items.length, buyer_id };
+        io.to(`user:${buyer_id}`).emit('order:created', payload);
+        io.to('admins').emit('order:created', payload);
+      }
+    }catch(e){ /* non-fatal */ }
+
     return {
       order_id,
       total: Number(total.toFixed(2)),
