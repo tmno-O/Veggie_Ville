@@ -418,3 +418,25 @@ body{
   color:var(--vv-stone-700);
   border-radius:6px;
 }
+
+/* BUG-FE-04: Hide developer annotation callouts from end users */
+.page-phone .callout:not(.error):not(.ok),
+.page-desktop .callout:not(.error):not(.ok) {
+  display: none !important;
+}
+
+/* BUG-FE-08: Fix pill container clipping hover/focus outlines */
+.pills {
+  overflow-x: auto !important;
+  overflow-y: visible !important;
+  padding-top: 4px !important;
+  padding-bottom: 6px !important;
+}
+
+/* BUG-FE-08: Pill hover state */
+.pill:hover {
+  border-color: var(--vv-green-300) !important;
+  background: var(--vv-green-50) !important;
+  color: var(--vv-green-700) !important;
+  cursor: pointer;
+}

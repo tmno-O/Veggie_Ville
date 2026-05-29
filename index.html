@@ -25,7 +25,8 @@
     }
     
 *{box-sizing:border-box}
-  html,body{margin:0;padding:0;background:var(--panel);color:var(--ink);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:14px;line-height:1.45}
+  html,body{margin:0;padding:0;background:var(--panel);color:var(--ink);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:14px;line-height:1.45;min-height:100vh;display:flex;flex-direction:column;}
+  #app-root{flex:1;display:flex;flex-direction:column;}
   a{color:inherit}
   /* ============ Layout ============ */
   .brand{font-weight:700;font-size:16px;letter-spacing:.02em}
@@ -289,6 +290,7 @@
   .footer{
     padding:24px 64px;border-top:1px solid var(--line);background:#FAFAFA;
     display:grid;grid-template-columns:repeat(4,1fr);gap:24px;color:var(--ink-2);font-size:11px;
+    margin-top:auto;
   }
   .footer h5{margin:0 0 8px;color:var(--ink);font-size:12px}
 
@@ -344,9 +346,10 @@
     position:absolute;top:-9px;left:8px;background:#fff;padding:0 6px;font-size:9px;color:var(--ink-3);font-family:ui-monospace,Menlo,monospace;letter-spacing:.08em;
   }
 
-  .page-content{display:grid;gap:24px;padding:24px 0;}
+  .page-content{flex:1;display:flex;flex-direction:column;gap:24px;padding:24px 0;}
   .page-phone, .page-desktop{width:100%;}
   .page-phone{display:none;}
+  .page-desktop{display:flex;flex-direction:column;flex:1;}
   .page-desktop .topbar{display:none;}
   @media (max-width:980px){
     .page-phone{display:block;}

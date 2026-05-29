@@ -6,6 +6,9 @@ const esc = window.VVEscape || ((value='') => String(value).replace(/[&<>"']/g, 
   '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
 }[ch])));
 
+let _catalogPage = 1;
+const CATALOG_PAGE_SIZE = 12;
+
 const routeMap = {
   '': 'p1',
   'browse': 'p2',
@@ -176,17 +179,19 @@ async function bindPage(pageId, params) {
   if (pageId === 'p12') await bindPickupSlots();
 }
 
-async function bindProducts(pageId, filters={}) {
+async function bindProducts(pageId, filters={}, page=1) {
   try {
-    const query = new URLSearchParams(filters);
-    const products = await request(`/api/products${query.toString() ? '?' + query.toString() : ''}`);
+    _catalogPage = page;
+    const query = new URLSearchParams({ ...filters, page, limit: CATALOG_PAGE_SIZE });
+    const data = await request(`/api/products?${query.toString()}`);
+
+    const products = Array.isArray(data) ? data : (data.items || []);
+    const total = data.total || products.length;
+    const totalPages = Math.max(1, Math.ceil(total / CATALOG_PAGE_SIZE));
+
     const cards = products.map(p => window.productCard({
-      id: p.id,
-      name: p.name,
-      size: p.size,
-      price: money(p.price),
-      exp: dateOnly(p.best_before),
-      category: p.category
+      id: p.id, name: p.name, size: p.size,
+      price: money(p.price), exp: dateOnly(p.best_before), category: p.category
     })).join('') || '<div class="surface small">No products available.</div>';
 
     if (pageId === 'p1') {
@@ -197,10 +202,36 @@ async function bindProducts(pageId, filters={}) {
       const desktopGrid = document.querySelector('.page-desktop .grid-3');
       if (mobileGrid) mobileGrid.innerHTML = cards;
       if (desktopGrid) desktopGrid.innerHTML = cards;
+      renderPagination(totalPages, page, filters);
     }
   } catch (err) {
     showInlineError('Unable to load products: ' + err.message);
   }
+}
+
+function renderPagination(totalPages, currentPage, filters) {
+  const paginationRow = document.querySelector('.page-desktop .grid-3 + .row, .page-desktop [style*="justify-content:center"]');
+  if (!paginationRow) return;
+
+  const pages = [];
+  for (let i = 1; i <= totalPages; i++) pages.push(i);
+
+  paginationRow.innerHTML = pages.map(p => {
+    const isActive = p === currentPage;
+    return `<span class="tag" style="${isActive ? 'background:#111;color:#fff;' : ''}cursor:pointer" data-page="${p}">${p}</span>`;
+  }).join('');
+
+  paginationRow.insertAdjacentHTML('afterbegin',
+    `<span class="tag" style="cursor:pointer" data-page="${Math.max(1, currentPage - 1)}">‹</span>`);
+  paginationRow.insertAdjacentHTML('beforeend',
+    `<span class="tag" style="cursor:pointer" data-page="${Math.min(totalPages, currentPage + 1)}">›</span>`);
+
+  paginationRow.querySelectorAll('[data-page]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const p = Number(btn.dataset.page);
+      if (p !== _catalogPage) bindProducts('p2', filters, p);
+    });
+  });
 }
 
 function bindCatalogFilters(filters={}) {
@@ -223,11 +254,38 @@ function bindCatalogFilters(filters={}) {
     const next = Object.fromEntries([...new FormData(form)].filter(([,v]) => v !== ''));
     await bindProducts('p2', next);
   }));
+
+  // Wire sidebar category checkboxes
+  document.querySelectorAll('.side-panel .check').forEach(check => {
+    check.style.cursor = 'pointer';
+    check.addEventListener('click', async () => {
+      document.querySelectorAll('.side-panel .check').forEach(c => c.classList.remove('on'));
+      check.classList.add('on');
+      const cat = check.textContent.trim();
+      const next = cat.toLowerCase() === 'all' ? {} : { category: cat };
+      await bindProducts('p2', next);
+    });
+  });
+
+  // Wire sidebar size checkboxes
+  document.querySelectorAll('.side-panel .row .check').forEach(check => {
+    check.style.cursor = 'pointer';
+    check.addEventListener('click', async () => {
+      document.querySelectorAll('.side-panel .row .check').forEach(c => c.classList.remove('on'));
+      check.classList.add('on');
+      const size = check.textContent.trim();
+      const currentCat = document.querySelector('.side-panel .check.on')?.textContent.trim() || 'All';
+      const next = {};
+      if (currentCat.toLowerCase() !== 'all') next.category = currentCat;
+      if (['S','M','L','XL'].includes(size)) next.size = size;
+      await bindProducts('p2', next);
+    });
+  });
 }
 
 window.VVLoadProducts = async (filters={}) => {
   const route = pageRoute(window.location.pathname);
-  if (route.pageId === 'p1' || route.pageId === 'p2') await bindProducts(route.pageId, filters);
+  if (route.pageId === 'p1' || route.pageId === 'p2') await bindProducts(route.pageId, filters, 1);
 };
 
 async function bindProductDetail(productId) {

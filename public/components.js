@@ -49,9 +49,24 @@
   const footerFull = `
     <div class="footer">
       <div><h5>Veggie Ville</h5>Community garden-share marketplace.</div>
-      <div><h5>Shop</h5>Browse<br/>Categories<br/>Sellers near me</div>
-      <div><h5>Sell</h5>Become a seller<br/>Listing guide<br/>Pickup slots</div>
-      <div><h5>Support</h5>FAQ<br/>Terms<br/>Privacy</div>
+      <div>
+        <h5>Shop</h5>
+        <span data-route="/browse" style="cursor:pointer;display:block;margin-bottom:4px;color:inherit">Browse</span>
+        <span data-route="/browse" style="cursor:pointer;display:block;margin-bottom:4px;color:inherit">Categories</span>
+        <span data-route="/browse" style="cursor:pointer;display:block;color:inherit">Sellers near me</span>
+      </div>
+      <div>
+        <h5>Sell</h5>
+        <span data-route="/seller" style="cursor:pointer;display:block;margin-bottom:4px;color:inherit">Become a seller</span>
+        <span data-route="/listing" style="cursor:pointer;display:block;margin-bottom:4px;color:inherit">Listing guide</span>
+        <span data-route="/pickup-slots" style="cursor:pointer;display:block;color:inherit">Pickup slots</span>
+      </div>
+      <div>
+        <h5>Support</h5>
+        <span style="cursor:pointer;display:block;margin-bottom:4px;color:inherit">FAQ</span>
+        <span style="cursor:pointer;display:block;margin-bottom:4px;color:inherit">Terms</span>
+        <span style="cursor:pointer;display:block;color:inherit">Privacy</span>
+      </div>
     </div>`;
 
   const productCard = (opts={}) => {
@@ -149,7 +164,7 @@
         <div style="margin-top:24px">${pills('All')}</div>
       </div>
       <div style="padding:24px 64px;background:var(--panel);margin-top:24px">
-        <div class="row between" style="margin-bottom:12px"><div class="h2">Just listed</div><span class="small mono">→ GET /api/products?limit=12&amp;sort=newest</span></div>
+        <div class="row between" style="margin-bottom:12px"><div class="h2">Just listed</div></div>
         <div class="grid-4">
           ${productCard({id:101,name:'Cherry tomato',size:'M',exp:'2026-05-20',expDanger:true,price:'฿120',category:'Vegetable'})}
           ${productCard({id:102,name:'Basil bunch',size:'S',exp:'2026-05-18',expDanger:true,price:'฿45',category:'Herb'})}
@@ -251,7 +266,7 @@
             ${productCard({name:'Green tomato',size:'M',exp:'2026-06-12',price:'฿70'})}
           </div>
           <div class="row" style="justify-content:center;margin-top:16px">
-            <span class="tag">‹</span><span class="tag">1</span><span class="tag" style="background:#111;color:#fff">2</span><span class="tag">3</span><span class="tag">…</span><span class="tag">›</span>
+            <span class="tag">‹</span><span class="tag" style="background:#111;color:#fff">1</span><span class="tag">2</span><span class="tag">3</span><span class="tag">…</span><span class="tag">›</span>
           </div>
           <div style="margin-top:16px">${api('GET /api/products?category=vegetable&amp;size=M&amp;min=0&amp;max=500&amp;keyword=tomato&amp;sort=newest&amp;page=2')}</div>
         </div>
@@ -406,10 +421,10 @@
         <div class="h1">Welcome back</div>
         <div class="input"><label>Email *</label><input type="email" id="login-email-mobile" class="field" placeholder="somchai@example.com" /></div>
         <div class="input"><label>Password *</label><input type="password" id="login-pass-mobile" class="field" placeholder="••••" /></div>
-        <div class="small" style="text-align:right;text-decoration:underline">Forgot password?</div>
+        <span class="small" style="text-align:right;text-decoration:underline;cursor:pointer;display:block" data-route="/login">Forgot password?</span>
         <button id="btn-submit-login-mobile" class="btn full">Login</button>
         <div class="small" style="text-align:center;color:var(--ink-3)">— or —</div>
-        <div class="small" style="text-align:center">New here? <b>Create account</b></div>
+        <div class="small" style="text-align:center">New here? <span data-route="/register" style="font-weight:700;cursor:pointer;text-decoration:underline">Create account</span></div>
       </div>
     `,
     desktop:`
@@ -424,10 +439,10 @@
             <div class="h1">Login</div>
             <div class="input"><label>Email *</label><input type="email" id="login-email-desktop" class="field" placeholder="somchai@example.com" /></div>
             <div class="input"><label>Password *</label><input type="password" id="login-pass-desktop" class="field" placeholder="••••" /></div>
-            <div class="small" style="text-align:right;text-decoration:underline">Forgot password?</div>
+            <span class="small" style="text-align:right;text-decoration:underline;cursor:pointer;display:block" data-route="/login">Forgot password?</span>
             <button id="btn-submit-login-desktop" class="btn full">Login</button>
             <div class="small" style="text-align:center;color:var(--ink-3)">— or —</div>
-            <div class="small" style="text-align:center">New here? <b>Create account</b></div>
+            <div class="small" style="text-align:center">New here? <span data-route="/register" style="font-weight:700;cursor:pointer;text-decoration:underline">Create account</span></div>
           </div>
         </div>
       </div>
