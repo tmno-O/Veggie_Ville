@@ -255,32 +255,34 @@ function bindCatalogFilters(filters={}) {
     await bindProducts('p2', next);
   }));
 
-  // Wire sidebar category checkboxes
-  document.querySelectorAll('.side-panel .check').forEach(check => {
-    check.style.cursor = 'pointer';
-    check.addEventListener('click', async () => {
-      document.querySelectorAll('.side-panel .check').forEach(c => c.classList.remove('on'));
-      check.classList.add('on');
-      const cat = check.textContent.trim();
-      const next = cat.toLowerCase() === 'all' ? {} : { category: cat };
-      await bindProducts('p2', next);
+  const sidePanel = document.querySelector('.page-desktop .side-panel');
+  if (sidePanel && !sidePanel.dataset.bound) {
+    sidePanel.dataset.bound = 'true';
+    sidePanel.querySelectorAll('.check').forEach(check => { check.style.cursor = 'pointer'; });
+    sidePanel.addEventListener('click', async (e) => {
+      const check = e.target.closest('.check');
+      if (!check) return;
+      const isSize = !!e.target.closest('.side-panel .row');
+      if (!isSize) {
+        sidePanel.querySelectorAll('.check').forEach(c => {
+          if (!c.closest('.row')) c.classList.remove('on');
+        });
+        check.classList.add('on');
+        const cat = check.textContent.trim();
+        await bindProducts('p2', cat.toLowerCase() === 'all' ? {} : { category: cat }, 1);
+      } else {
+        sidePanel.querySelectorAll('.row .check').forEach(c => c.classList.remove('on'));
+        check.classList.add('on');
+        const size = check.textContent.trim();
+        const activeCat = Array.from(sidePanel.querySelectorAll('.check.on'))
+          .find(c => !c.closest('.row'))?.textContent.trim() || 'All';
+        const next = {};
+        if (activeCat.toLowerCase() !== 'all') next.category = activeCat;
+        if (['S','M','L','XL'].includes(size)) next.size = size;
+        await bindProducts('p2', next, 1);
+      }
     });
-  });
-
-  // Wire sidebar size checkboxes
-  document.querySelectorAll('.side-panel .row .check').forEach(check => {
-    check.style.cursor = 'pointer';
-    check.addEventListener('click', async () => {
-      document.querySelectorAll('.side-panel .row .check').forEach(c => c.classList.remove('on'));
-      check.classList.add('on');
-      const size = check.textContent.trim();
-      const currentCat = document.querySelector('.side-panel .check.on')?.textContent.trim() || 'All';
-      const next = {};
-      if (currentCat.toLowerCase() !== 'all') next.category = currentCat;
-      if (['S','M','L','XL'].includes(size)) next.size = size;
-      await bindProducts('p2', next);
-    });
-  });
+  }
 }
 
 window.VVLoadProducts = async (filters={}) => {
@@ -296,7 +298,7 @@ async function bindProductDetail(productId) {
       const img = container.querySelector('.img-ph');
       const title = container.querySelector('.h1');
       const price = container.querySelector('.price');
-      if (img) img.textContent = '[IMG product photo]';
+      if (img) img.textContent = '';
       if (title) title.textContent = p.name;
       if (price) price.innerHTML = `${money(p.price)} <span class="small">/ item</span>`;
       const tag = container.querySelector('.tag');
@@ -366,6 +368,7 @@ async function bindCartPage() {
   try {
     const [cart, slots] = await Promise.all([request('/api/cart'), request('/api/pickup-slots')]);
     renderCartSections(cart, slots);
+    window.VVCart?.fetch();
   } catch (err) {
     showInlineError('Unable to load cart: ' + err.message);
   }
@@ -696,7 +699,7 @@ async function bindAccountState() {
     btn.addEventListener('click', () => {
       if (me) {
         window.VVAuth.setToken(null);
-        localStorage.removeItem('vv_cart');
+        window.VVAuth.lsRemove('vv_cart');
         navigate('/');
       } else {
         navigate('/login');

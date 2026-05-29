@@ -2,9 +2,21 @@
   // Simple UI interactions for Wireframes with filtering and backend cart integration
   function $(sel,ctx=document){return ctx.querySelector(sel)}
   function $all(sel,ctx=document){return Array.from(ctx.querySelectorAll(sel))}
+  const esc = window.VVEscape || ((v='') => String(v).replace(/[&<>"']/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])));
+
+  function lsGet(key, fallback=null) {
+    try { return localStorage.getItem(key) ?? fallback; } catch { return fallback; }
+  }
+  function lsSet(key, val) {
+    try { localStorage.setItem(key, String(val)); } catch { /* quota or private mode */ }
+  }
+  function lsRemove(key) {
+    try { localStorage.removeItem(key); } catch { /* ignore */ }
+  }
 
   // cart counter (initial value may be fetched from server later)
-  let cartCount = Number(localStorage.getItem('vv_cart')||0);
+  let cartCount = Number(lsGet('vv_cart', '0')||0);
   function renderCartBadge(){
     $all('.nav-bar .icon, .bottom-nav .b .ic').forEach(ic=>{
       let existing = ic.querySelector('.vv-cart-badge');
@@ -17,7 +29,7 @@
         if(cartCount>0) existing.textContent = cartCount; else existing.remove();
       }
     });
-    localStorage.setItem('vv_cart', String(cartCount));
+    lsSet('vv_cart', String(cartCount));
   }
   window.VVBadge = renderCartBadge;
   renderCartBadge();
@@ -40,12 +52,12 @@
 
   // --- Auth helpers ---
   function setAuthToken(token){
-    if(!token){ localStorage.removeItem('vv_token'); return; }
-    localStorage.setItem('vv_token', token);
+    if(!token){ lsRemove('vv_token'); return; }
+    lsSet('vv_token', token);
   }
 
   async function fetchMe(){
-    const token = localStorage.getItem('vv_token');
+    const token = lsGet('vv_token');
     if(!token) return null;
     try{
       const res = await fetch('/api/auth/me', { method:'GET', credentials:'include', headers: { 'Authorization': 'Bearer '+token } });
@@ -55,10 +67,14 @@
   }
 
   async function authFetch(url, opts={}){
-    opts = Object.assign({ credentials: 'include', headers: {} }, opts || {});
-    const token = localStorage.getItem('vv_token');
-    if(token){ opts.headers = Object.assign({}, opts.headers, { 'Authorization': 'Bearer '+token }); }
-    return fetch(url, opts);
+    try {
+      opts = Object.assign({ credentials: 'include', headers: {} }, opts || {});
+      const token = lsGet('vv_token');
+      if(token){ opts.headers = Object.assign({}, opts.headers, { 'Authorization': 'Bearer '+token }); }
+      return await fetch(url, opts);
+    } catch(err) {
+      throw new Error('Network error: ' + esc(err.message||err));
+    }
   }
 
   let vvSocket = null;
@@ -66,10 +82,10 @@
     try{
       if(typeof io === 'undefined') return;
       if(vvSocket) vvSocket.disconnect();
-      const token = localStorage.getItem('vv_token');
+      const token = lsGet('vv_token');
       vvSocket = io({ auth: { token } });
-      vvSocket.on('connect', ()=>{ console.debug('Socket connected'); });
-      vvSocket.on('connect_error', (err)=>{ console.debug('Socket connect error', err); });
+      vvSocket.on('connect', ()=>{});
+      vvSocket.on('connect_error', ()=>{});
       vvSocket.on('cart:update', data=>{
         try{
           if(data && Array.isArray(data.items)){
@@ -84,7 +100,7 @@
     }catch(e){ console.warn('Socket init failed', e); }
   }
 
-  window.VVAuth = { setToken: setAuthToken, fetchMe, authFetch, connectSocket };
+  window.VVAuth = { setToken: setAuthToken, fetchMe, authFetch, connectSocket, lsRemove };
   // convenience: perform login and persist token
   window.VVAuth.login = async (email, password) => {
     const res = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
@@ -110,9 +126,9 @@
       announce('Added to cart');
     }catch(err){
       // revert optimistic update if any
-      cartCount = Math.max(0, Number(localStorage.getItem('vv_cart')||0)); renderCartBadge();
+      cartCount = Math.max(0, Number(lsGet('vv_cart', '0')||0)); renderCartBadge();
       // show focus-trapped modal for important failure
-      window.VVModal && window.VVModal.openModal ? window.VVModal.openModal(`<div style="font-weight:700;margin-bottom:8px">Failed to add to cart</div><div style="color:#333;margin-bottom:8px">${String(err.message||err)}</div>`) : alert('Failed to add to cart: '+String(err.message||err));
+      window.VVModal && window.VVModal.openModal ? window.VVModal.openModal(`<div style="font-weight:700;margin-bottom:8px">Failed to add to cart</div><div style="color:#333;margin-bottom:8px">${esc(err.message||err)}</div>`) : alert('Failed to add to cart: '+esc(err.message||err));
       console.error('Add to cart error', err);
     }
   }
@@ -142,7 +158,6 @@
       } else if(data && typeof data.count === 'number') { cartCount = data.count; renderCartBadge(); }
     }catch(err){
       // server not available — fallback to local
-      console.debug('Could not fetch cart', err);
     }
   }
 
@@ -155,7 +170,6 @@
       const price = it.price || 0;
       const subtotal = it.subtotal || (price * qty) || 0;
       const el = document.createElement('div'); el.style.cssText='display:grid;grid-template-columns:48px 1fr auto;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid rgba(0,0,0,.04)';
-      const esc = window.VVEscape || ((value='') => String(value).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])));
       el.innerHTML = `<div class="img-ph" style="width:48px;height:48px;aspect-ratio:1/1">img</div><div><div style="font-weight:600">${esc(it.name)}</div><div class="small mono">฿${Number(price)} × ${Number(qty)}</div></div><div style="text-align:right"><div class="mono">฿${Number(subtotal)}</div><div style="margin-top:6px"><button class="btn ghost sm vv-remove-item" data-cart-item="${esc(it.cart_item_id || '')}">Remove</button></div></div>`;
       body.appendChild(el);
     });
@@ -197,11 +211,11 @@
           // refresh cart
           await fetchCart();
         }catch(err){
-          window.VVModal && window.VVModal.openModal ? window.VVModal.openModal(`<div style="font-weight:700">Checkout failed</div><div style="color:#333">${String(err.message||err)}</div>`) : alert('Checkout failed: '+String(err.message||err));
+          window.VVModal && window.VVModal.openModal ? window.VVModal.openModal(`<div style="font-weight:700">Checkout failed</div><div style="color:#333">${esc(err.message||err)}</div>`) : alert('Checkout failed: '+esc(err.message||err));
         }
       }, { once:true });
     }catch(err){
-      window.VVModal && window.VVModal.openModal ? window.VVModal.openModal(`<div style="font-weight:700">Unable to load pickup slots</div><div style="color:#333">${String(err.message||err)}</div>`) : alert('Unable to load pickup slots');
+      window.VVModal && window.VVModal.openModal ? window.VVModal.openModal(`<div style="font-weight:700">Unable to load pickup slots</div><div style="color:#333">${esc(err.message||err)}</div>`) : alert('Unable to load pickup slots');
     }
   }
 
@@ -222,6 +236,7 @@
     if(open){ d.style.transform='translateX(100%)'; d.setAttribute('aria-hidden','true'); }
     else { d.style.transform='translateX(0%)'; d.setAttribute('aria-hidden','false'); fetchCart(); }
   }
+  window.VVCart = { fetch: fetchCart, toggle: toggleCart };
 
   // attach cart toggle to cart icons
 document.addEventListener('click', e => {
@@ -251,7 +266,7 @@ document.addEventListener('click', e => {
       await fetchCart();
       announce('Item removed');
     }catch(err){
-      window.VVModal && window.VVModal.openModal ? window.VVModal.openModal(`<div style="font-weight:700;margin-bottom:8px">Failed to remove item</div><div style="color:#333;margin-bottom:8px">${String(err.message||err)}</div>`) : alert('Failed to remove item: '+String(err.message||err));
+      window.VVModal && window.VVModal.openModal ? window.VVModal.openModal(`<div style="font-weight:700;margin-bottom:8px">Failed to remove item</div><div style="color:#333;margin-bottom:8px">${esc(err.message||err)}</div>`) : alert('Failed to remove item: '+esc(err.message||err));
       console.error('Remove cart item failed', err);
     }
   });
@@ -278,14 +293,14 @@ document.addEventListener('click', e => {
         const card = btn.closest('.pcard');
         if(card){
           // optimistic local increment (kept minimal)
-          cartCount = Number(localStorage.getItem('vv_cart')||0) + 1; renderCartBadge();
+          cartCount = Number(lsGet('vv_cart', '0')||0) + 1; renderCartBadge();
           const item = { product_id: card.dataset.id || card.dataset.name, qty: 1 };
           postAddToCart(item);
         } else if(btn.dataset.productId) {
-          cartCount = Number(localStorage.getItem('vv_cart')||0) + 1; renderCartBadge();
+          cartCount = Number(lsGet('vv_cart', '0')||0) + 1; renderCartBadge();
           postAddToCart({ product_id: btn.dataset.productId, qty: 1 });
         } else {
-          cartCount = Number(localStorage.getItem('vv_cart')||0) + 1; renderCartBadge(); announce('Added to cart');
+          cartCount = Number(lsGet('vv_cart', '0')||0) + 1; renderCartBadge(); announce('Added to cart');
         }
       } else if(/Remove|🗑|Delete/i.test(txt)){
         if(cartCount>0) cartCount = Math.max(0,cartCount-1); renderCartBadge(); announce('Removed');

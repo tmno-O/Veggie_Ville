@@ -88,7 +88,7 @@
     const safeId = escapeHtml(slug);
     return `
       <div class="pcard" data-id="${safeId}" data-name="${safeName}" data-category="${safeCategory}" data-size="${safeSize}" data-price="${safePrice}" data-exp="${safeExp}">
-        <div class="img-ph" style="border-radius:0;border-left:none;border-right:none;border-top:none">[IMG 16:9]</div>
+        <div class="img-ph" style="border-radius:0;border-left:none;border-right:none;border-top:none"></div>
         <div class="body">
           <div class="name">${safeName}</div>
           <div class="meta">
@@ -120,8 +120,6 @@
       <div><span class="lbl">API CALL</span><span class="mono">${txt}</span></div>
     </div>`;
 
-  const note = (txt) => `<div class="small mono" style="color:var(--ink-3)">// ${txt}</div>`;
-
   // ---------- pages ----------
   const pages = [];
 
@@ -131,14 +129,12 @@
     apis:'GET /api/products?limit=12 · GET /api/categories',
     mobile:`
       ${navBarMobile}
-      <div class="surface" style="text-align:center">
+      <div class="surface vv-center">
         <div class="h1">Fresh from your neighbors</div>
         <div class="small" style="margin-top:6px">Buy &amp; swap home-grown produce</div>
         <button class="btn full" style="margin-top:12px">Browse Products</button>
-        ${note('[BTN primary] · CTA → /browse')}
       </div>
       ${pills('All')}
-      ${note('Horizontal scroll category pills')}
       <div class="stack-12">
         ${productCard({id:101,name:'Cherry tomato',size:'M',exp:'2026-05-20',expDanger:true,price:'฿120',category:'Vegetable'})}
         ${productCard({id:102,name:'Basil bunch',size:'S',exp:'2026-05-18',expDanger:true,price:'฿45',category:'Herb'})}
@@ -159,11 +155,11 @@
             <div class="small" style="font-size:14px">Buy &amp; swap home-grown produce. Pick up nearby on weekends.</div>
             <div class="row"><button class="btn">Browse Products</button><button class="btn ghost">Become a Seller</button></div>
           </div>
-          <div class="img-ph banner">[IMG 21:9 — hero illustration / garden scene placeholder]</div>
+          <div class="img-ph banner"></div>
         </div>
         <div style="margin-top:24px">${pills('All')}</div>
       </div>
-      <div style="padding:24px 64px;background:var(--panel);margin-top:24px">
+      <div class="vv-panel-bg">
         <div class="row between" style="margin-bottom:12px"><div class="h2">Just listed</div></div>
         <div class="grid-4">
           ${productCard({id:101,name:'Cherry tomato',size:'M',exp:'2026-05-20',expDanger:true,price:'฿120',category:'Vegetable'})}
@@ -200,7 +196,7 @@
           </div>
         </div>
         <div class="input" style="margin-top:8px">
-          <label>[INPUT text] Keyword <span class="small">· debounced 300ms</span></label>
+          <label>Keyword <span class="small">· debounced 300ms</span></label>
           <div class="field">tomato<span style="margin-left:auto" class="small mono">…typing</span></div>
         </div>
       </div>
@@ -281,7 +277,7 @@
     apis:'GET /api/products/:id · GET /api/products?seller_id=&exclude=:id',
     mobile:`
       ${navBarMobile}
-      <div class="img-ph">[IMG 16:9 — main photo]</div>
+      <div class="img-ph"></div>
       <div class="stack-8">
         <div class="h1">Heirloom tomato — Sungold</div>
         <div class="row" style="gap:6px"><span class="badge">M</span><span class="tag">⏳ Best before 2026-06-02</span></div>
@@ -294,7 +290,6 @@
           </div>
         </div>
         <div class="text-lines"><i></i><i></i><i></i></div>
-        ${note('[TEXT] description')}
         <div class="row" style="gap:12px">
           <div class="qty"><span>−</span><span class="n">1</span><span>+</span></div>
           <span class="small mono">Stock: 12</span>
@@ -302,7 +297,7 @@
       </div>
       <div class="hr"></div>
       <div class="h3">More from this seller</div>
-      <div style="display:flex;gap:8px;overflow:auto">
+      <div class="vv-scroll-x">
         <div style="min-width:140px">${productCard({name:'Sungold cherry',size:'S',price:'฿120',exp:'2026-06-04',addBtn:false})}</div>
         <div style="min-width:140px">${productCard({name:'Basil',size:'S',price:'฿45',exp:'2026-05-30',addBtn:false})}</div>
         <div style="min-width:140px">${productCard({name:'Mint',size:'S',price:'฿30',exp:'2026-05-22',addBtn:false,expDanger:true})}</div>
@@ -310,21 +305,20 @@
       ${api('GET /api/products/42')}
       <div style="position:sticky;bottom:0;background:#fff;padding-top:12px;border-top:1px solid var(--line);margin:0 -16px;padding:12px 16px">
         <button class="btn full">Add to Cart</button>
-        ${note('[BTN primary] sticky bottom')}
       </div>
     `,
     desktop:`
       ${navBarDesktop}
-      <div style="padding:32px 64px">
+      <div class="vv-page-pad">
         <div class="row small mono" style="color:var(--ink-3);margin-bottom:12px">Home / Vegetable / Tomato / Heirloom — Sungold</div>
         <div style="display:grid;grid-template-columns:60% 40%;gap:32px">
           <div>
-            <div class="img-ph" style="aspect-ratio:4/3">[IMG 4:3 — main photo]</div>
+            <div class="img-ph" style="aspect-ratio:4/3"></div>
             <div class="row" style="margin-top:12px;gap:8px">
-              <div class="img-ph" style="width:80px;aspect-ratio:1/1">thumb 1</div>
-              <div class="img-ph" style="width:80px;aspect-ratio:1/1">thumb 2</div>
-              <div class="img-ph" style="width:80px;aspect-ratio:1/1">thumb 3</div>
-              <div class="img-ph" style="width:80px;aspect-ratio:1/1">thumb 4</div>
+              <div class="img-ph" style="width:80px;aspect-ratio:1/1"></div>
+              <div class="img-ph" style="width:80px;aspect-ratio:1/1"></div>
+              <div class="img-ph" style="width:80px;aspect-ratio:1/1"></div>
+              <div class="img-ph" style="width:80px;aspect-ratio:1/1"></div>
             </div>
           </div>
           <div class="stack-12">
@@ -342,7 +336,6 @@
               <button class="btn ghost sm" style="margin-left:auto">View profile</button>
             </div>
             <div class="text-lines"><i></i><i></i><i></i><i></i></div>
-            ${note('[TEXT] description placeholder')}
             <div class="row" style="gap:12px"><div class="qty"><span>−</span><span class="n">1</span><span>+</span></div><span class="small mono">Stock: 12</span></div>
             <div class="row" style="gap:8px"><button class="btn">Add to Cart</button><button class="btn ghost">♡ Save to wishlist</button></div>
             ${api('GET /api/products/42')}
@@ -370,14 +363,14 @@
       ${navBarMobileLogoOnly}
       <div class="surface stack-12">
         <div class="h1">Create account</div>
-        <div class="input"><label>[INPUT text] Full name *</label><div class="field">Somchai Jaidee</div></div>
-        <div class="input ok"><label>[INPUT email] Email *</label><div class="field">somchai@example.com</div></div>
-        <div class="input"><label>[INPUT password] Password *</label><div class="field">••••••••<span style="margin-left:auto" class="small">show</span></div></div>
-        <div class="input error"><label>[INPUT password] Confirm password *</label><div class="field">••••••<span style="margin-left:auto" class="small">show</span></div><div class="help" style="color:var(--error)">Passwords do not match</div></div>
-        <div class="input"><label>[SELECT] I am a *</label><div class="select">Buyer</div></div>
+        <div class="input"><label>Full name *</label><div class="field">Somchai Jaidee</div></div>
+        <div class="input ok"><label>Email *</label><div class="field">somchai@example.com</div></div>
+        <div class="input"><label>Password *</label><div class="field">••••••••<span style="margin-left:auto" class="small">show</span></div></div>
+        <div class="input error"><label>Confirm password *</label><div class="field">••••••<span style="margin-left:auto" class="small">show</span></div><div class="help" style="color:var(--error)">Passwords do not match</div></div>
+        <div class="input"><label>I am a *</label><div class="select">Buyer</div></div>
         <button class="btn full">Create account</button>
         <div class="row" style="justify-content:center"><span class="small">— or —</span></div>
-        <div class="small" style="text-align:center">Already have an account? <b>Login</b></div>
+        <div class="small vv-center">Already have an account? <b>Login</b></div>
       </div>
       ${api('POST /api/auth/register { name, email, password, role }')}
       ${callout('Role enum: buyer | seller. Admin accounts created out-of-band by DB seed.','⚡ Role validation: enum check before INSERT')}
@@ -385,25 +378,25 @@
     `,
     desktop:`
       ${navBarDesktopAdmin.replace('Admin Console','Veggie Ville').replace('<span class="badge" style="margin-left:8px">👑 ADMIN</span>','')}
-      <div style="display:grid;grid-template-columns:1fr 1fr;min-height:600px">
-        <div style="padding:64px;background:var(--panel);display:flex;flex-direction:column;justify-content:center;gap:16px">
-          <div class="img-ph banner" style="aspect-ratio:4/3;max-width:480px">[IMG — community garden illustration]</div>
+      <div class="vv-grid-hero">
+        <div class="vv-hero-left">
+          <div class="img-ph banner" style="aspect-ratio:4/3;max-width:480px"></div>
           <div class="h1" style="font-size:28px;max-width:420px">Join your neighborhood's garden share.</div>
           <div class="small" style="max-width:420px">Sell your harvest, find fresh produce within walking distance.</div>
         </div>
-        <div style="padding:64px;display:flex;align-items:center;justify-content:center">
-          <div class="surface stack-12" style="width:100%;max-width:420px">
+        <div class="vv-hero-right">
+          <div class="surface stack-12 vv-max-420">
             <div class="h1">Create account</div>
-            <div class="input"><label>[INPUT text] Full name *</label><div class="field">Somchai Jaidee</div></div>
-            <div class="input ok"><label>[INPUT email] Email *</label><div class="field">somchai@example.com</div></div>
+            <div class="input"><label>Full name *</label><div class="field">Somchai Jaidee</div></div>
+            <div class="input ok"><label>Email *</label><div class="field">somchai@example.com</div></div>
             <div class="grid-2">
-              <div class="input"><label>[INPUT password] Password *</label><div class="field">••••••••</div></div>
+              <div class="input"><label>Password *</label><div class="field">••••••••</div></div>
               <div class="input error"><label>Confirm *</label><div class="field">••••••</div><div class="help" style="color:var(--error)">Mismatch</div></div>
             </div>
-            <div class="input"><label>[SELECT] I am a *</label><div class="select">Buyer</div></div>
+            <div class="input"><label>I am a *</label><div class="select">Buyer</div></div>
             <button class="btn full">Create account</button>
             <div class="small" style="text-align:center;color:var(--ink-3)">— or —</div>
-            <div class="small" style="text-align:center">Already have an account? <b>Login</b></div>
+            <div class="small vv-center">Already have an account? <b>Login</b></div>
             ${api('POST /api/auth/register')}
           </div>
         </div>
@@ -424,25 +417,25 @@
         <span class="small" style="text-align:right;text-decoration:underline;cursor:pointer;display:block" data-route="/login">Forgot password?</span>
         <button id="btn-submit-login-mobile" class="btn full">Login</button>
         <div class="small" style="text-align:center;color:var(--ink-3)">— or —</div>
-        <div class="small" style="text-align:center">New here? <span data-route="/register" style="font-weight:700;cursor:pointer;text-decoration:underline">Create account</span></div>
+        <div class="small vv-center">New here? <span data-route="/register" style="font-weight:700;cursor:pointer;text-decoration:underline">Create account</span></div>
       </div>
     `,
     desktop:`
       ${navBarMobileLogoOnly}
-      <div style="display:grid;grid-template-columns:1fr 1fr;min-height:600px">
-        <div style="padding:64px;background:var(--panel);display:flex;flex-direction:column;justify-content:center;gap:16px">
-          <div class="img-ph banner" style="aspect-ratio:4/3;max-width:480px">[IMG — basket of produce]</div>
+      <div class="vv-grid-hero">
+        <div class="vv-hero-left">
+          <div class="img-ph banner" style="aspect-ratio:4/3;max-width:480px"></div>
           <div class="h1" style="font-size:28px;max-width:420px">Welcome back. Your neighbors have been busy.</div>
         </div>
-        <div style="padding:64px;display:flex;align-items:center;justify-content:center">
-          <div class="surface stack-12" style="width:100%;max-width:420px">
+        <div class="vv-hero-right">
+          <div class="surface stack-12 vv-max-420">
             <div class="h1">Login</div>
             <div class="input"><label>Email *</label><input type="email" id="login-email-desktop" class="field" placeholder="somchai@example.com" /></div>
             <div class="input"><label>Password *</label><input type="password" id="login-pass-desktop" class="field" placeholder="••••" /></div>
             <span class="small" style="text-align:right;text-decoration:underline;cursor:pointer;display:block" data-route="/login">Forgot password?</span>
             <button id="btn-submit-login-desktop" class="btn full">Login</button>
             <div class="small" style="text-align:center;color:var(--ink-3)">— or —</div>
-            <div class="small" style="text-align:center">New here? <span data-route="/register" style="font-weight:700;cursor:pointer;text-decoration:underline">Create account</span></div>
+            <div class="small vv-center">New here? <span data-route="/register" style="font-weight:700;cursor:pointer;text-decoration:underline">Create account</span></div>
           </div>
         </div>
       </div>
@@ -466,7 +459,7 @@
               <div class="row" style="gap:4px;margin-top:4px"><span class="badge">${['M','S','L'][i-1]}</span><span class="tag ${i===2?'danger':''}">⏳ ${['2026-06-02','2026-05-18','2026-06-04'][i-1]}</span></div>
               <div class="row" style="gap:8px;margin-top:6px"><div class="qty"><span>−</span><span class="n">${i}</span><span>+</span></div><span class="small">฿${[180,45,180][i-1]} ea.</span></div>
             </div>
-            <div style="text-align:right"><div style="font-weight:700">฿${i*[180,45,180][i-1]}</div><div class="small" style="text-decoration:underline">🗑 remove</div></div>
+            <div class="vv-right"><div style="font-weight:700">฿${i*[180,45,180][i-1]}</div><div class="small" style="text-decoration:underline">🗑 remove</div></div>
           </div>
         `).join('')}
       </div>
@@ -485,7 +478,6 @@
         <div class="row between" style="font-weight:700"><span>Total</span><span class="mono">฿785</span></div>
       </div>
       <button class="btn full">Proceed to checkout</button>
-      <div class="small mono" style="color:var(--ink-3)">// disabled state shown below ↓</div>
       <button class="btn full disabled">Proceed to checkout (select pickup first)</button>
       ${api('PUT /api/cart/:id · POST /api/orders { pickup_slot_id, items }')}
     `,
@@ -504,8 +496,8 @@
                 ['Free-range eggs','L','2026-06-04',3,180,false],
               ].map(r=>`
               <tr>
-                <td><div class="img-ph" style="width:48px;height:48px;aspect-ratio:1/1">[IMG]</div></td>
-                <td><div style="font-weight:600">${r[0]}</div><div class="small mono">SKU-${Math.floor(Math.random()*9999)}</div></td>
+                <td><div class="img-ph" style="width:48px;height:48px;aspect-ratio:1/1"></div></td>
+                <td><div style="font-weight:600">${r[0]}</div><div class="small mono">SKU-${String(r[0]).replace(/[^A-Z0-9]/g,'-').slice(0,8)}</div></td>
                 <td><span class="badge">${r[1]}</span></td>
                 <td><span class="tag ${r[5]?'danger':''}">⏳ ${r[2]}</span></td>
                 <td><div class="qty"><span>−</span><span class="n">${r[3]}</span><span>+</span></div></td>
@@ -562,8 +554,8 @@
       </div>
       <div class="surface stack-8">
         <div class="h3">Contact info</div>
-        <div class="input"><label>[INPUT text] Name *</label><div class="field">Somchai Jaidee</div></div>
-        <div class="input"><label>[INPUT tel] Phone *</label><div class="field">+66 81 234 5678</div></div>
+        <div class="input"><label>Name *</label><div class="field">Somchai Jaidee</div></div>
+        <div class="input"><label>Phone *</label><div class="field">+66 81 234 5678</div></div>
       </div>
       <div class="surface stack-8">
         <div class="h3">Payment</div>
@@ -574,7 +566,6 @@
       ${api('POST /api/orders { items, pickup_slot_id, contact }')}
       ${callout('seller_id and buyer_id are derived from JWT server-side. Never read these fields from the form payload.','⚡ seller_id / buyer_id from JWT — never from form')}
       <div class="hr"></div>
-      ${note('Success state — replaces form:')}
       <div class="surface" style="text-align:center;padding:24px">
         <div style="font-size:36px">✓</div>
         <div class="h1" style="margin-top:8px">Order placed!</div>
@@ -588,7 +579,7 @@
     `,
     desktop:`
       ${navBarDesktop}
-      <div style="padding:32px 64px">
+      <div class="vv-page-pad">
         <div class="step-ind" style="margin-bottom:24px">
           <span class="s done">1</span>Cart
           <span style="color:var(--line)">———</span>
@@ -605,8 +596,8 @@
             <div class="surface stack-8">
               <div class="h2">Contact info</div>
               <div class="grid-2">
-                <div class="input"><label>[INPUT text] Name *</label><div class="field">Somchai Jaidee</div></div>
-                <div class="input"><label>[INPUT tel] Phone *</label><div class="field">+66 81 234 5678</div></div>
+                <div class="input"><label>Name *</label><div class="field">Somchai Jaidee</div></div>
+                <div class="input"><label>Phone *</label><div class="field">+66 81 234 5678</div></div>
               </div>
             </div>
             <div class="surface stack-8">
@@ -673,7 +664,7 @@
     `,
     desktop:`
       ${navBarDesktop}
-      <div style="padding:32px 64px">
+      <div class="vv-page-pad">
         <div class="row between" style="margin-bottom:12px"><div class="h1">My orders</div><div class="tabs"><div class="t active">All</div><div class="t">Confirmed</div><div class="t">Cancelled</div></div></div>
         <div class="surface" style="padding:0;overflow:hidden">
           <table class="tbl">
@@ -715,7 +706,7 @@
       ${navBarMobile}
       <div class="h1">Seller dashboard</div>
       ${callout('Requires role=seller in JWT claims. Buyer-only accounts see upgrade prompt.','🔒 Auth gate: seller role required')}
-      <div style="display:flex;gap:8px;overflow:auto">
+      <div class="vv-scroll-x">
         <div class="stat" style="min-width:140px"><div class="k">Listings</div><div class="v">12</div></div>
         <div class="stat" style="min-width:140px"><div class="k">Active</div><div class="v">9</div></div>
         <div class="stat" style="min-width:140px"><div class="k">Expiring &lt;7d</div><div class="v">3</div></div>
@@ -729,7 +720,7 @@
           ['Free-range eggs','L','2026-06-04',180,24,false],
         ].map(r=>`
           <div class="surface" style="display:grid;grid-template-columns:56px 1fr auto;gap:10px;align-items:center">
-            <div class="img-ph" style="width:56px;aspect-ratio:1/1">[IMG]</div>
+            <div class="img-ph" style="width:56px;aspect-ratio:1/1"></div>
             <div>
               <div style="font-weight:600;font-size:13px">${r[0]}</div>
               <div class="row" style="gap:4px;margin-top:4px"><span class="badge">${r[1]}</span><span class="tag ${r[5]?'danger':''}">⏳ ${r[2]}</span></div>
@@ -739,7 +730,6 @@
           </div>`).join('')}
       </div>
       <div class="fab">+</div>
-      ${note('[FAB] floating action — New listing')}
       ${api('GET /api/products')}
       ${bottomNav}
     `,
@@ -775,7 +765,7 @@
                   ['Mint','S',30,18,'2026-05-22','Expiring',true],
                 ].map(r=>`
                 <tr>
-                  <td><div class="img-ph" style="width:48px;height:48px;aspect-ratio:1/1">[IMG]</div></td>
+                  <td><div class="img-ph" style="width:48px;height:48px;aspect-ratio:1/1"></div></td>
                   <td><div style="font-weight:600">${r[0]}</div></td>
                   <td><span class="badge">${r[1]}</span></td>
                   <td class="mono">฿${r[2]}</td>
@@ -802,25 +792,25 @@
       ${navBarMobile}
       <div class="h1">New listing</div>
       <div class="stack-12">
-        <div class="input"><label>[INPUT text] Product name *</label><div class="field">Heirloom tomato — Sungold</div></div>
-        <div class="input"><label>[INPUT multiline] Description</label><div class="field" style="height:64px;align-items:flex-start;padding:8px 10px">Sweet, golden cherry tomatoes…</div></div>
+        <div class="input"><label>Product name *</label><div class="field">Heirloom tomato — Sungold</div></div>
+        <div class="input"><label>Description</label><div class="field" style="height:64px;align-items:flex-start;padding:8px 10px">Sweet, golden cherry tomatoes…</div></div>
         <div class="grid-2">
-          <div class="input"><label>[INPUT number] Price (฿) *</label><div class="field">180</div></div>
-          <div class="input"><label>[INPUT number] Quantity *</label><div class="field">12</div></div>
+          <div class="input"><label>Price (฿) *</label><div class="field">180</div></div>
+          <div class="input"><label>Quantity *</label><div class="field">12</div></div>
         </div>
         <div class="grid-2">
-          <div class="input"><label>[SELECT] Size *</label><div class="select">M</div></div>
-          <div class="input"><label>[SELECT] Category *</label><div class="select">Vegetable</div></div>
+          <div class="input"><label>Size *</label><div class="select">M</div></div>
+          <div class="input"><label>Category *</label><div class="select">Vegetable</div></div>
         </div>
         <div class="input error">
-          <label>[INPUT date] Best before *</label>
+          <label>Best before *</label>
           <div class="field">2026-05-10 📅</div>
           <div class="help" style="color:var(--error)">Must be a future date</div>
         </div>
         ${callout("size ENUM = ('S','M','L','XL') validated before INSERT INTO products.",'⚡ size ENUM validated before MySQL')}
         ${callout('best_before must be &gt; CURRENT_DATE. Else 422. Products past this date are auto-hidden from /api/products.','⚡ Future-date constraint')}
         <div class="input">
-          <label>[IMG UPLOAD] Photo</label>
+          <label>Photo</label>
           <div class="img-ph upload" style="aspect-ratio:4/3">📷  Tap to upload</div>
         </div>
         <button class="btn full">Save listing</button>
@@ -831,31 +821,30 @@
     `,
     desktop:`
       ${navBarDesktop}
-      <div style="padding:32px 64px">
+      <div class="vv-page-pad">
         <div class="row between" style="margin-bottom:16px"><div class="h1">New listing</div><div class="row"><button class="btn ghost">Cancel</button><button class="btn">Save listing</button></div></div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
           <div class="stack-12">
-            <div class="input"><label>[INPUT text] Product name *</label><div class="field">Heirloom tomato — Sungold</div></div>
-            <div class="input"><label>[INPUT multiline] Description</label><div class="field" style="height:96px;align-items:flex-start;padding:8px 10px">Sweet, golden cherry tomatoes…</div></div>
+            <div class="input"><label>Product name *</label><div class="field">Heirloom tomato — Sungold</div></div>
+            <div class="input"><label>Description</label><div class="field" style="height:96px;align-items:flex-start;padding:8px 10px">Sweet, golden cherry tomatoes…</div></div>
             <div class="grid-2">
-              <div class="input"><label>[INPUT number] Price (฿) *</label><div class="field">180</div></div>
-              <div class="input"><label>[INPUT number] Quantity *</label><div class="field">12</div></div>
+              <div class="input"><label>Price (฿) *</label><div class="field">180</div></div>
+              <div class="input"><label>Quantity *</label><div class="field">12</div></div>
             </div>
             <div class="grid-2">
-              <div class="input"><label>[SELECT] Size *</label><div class="select">M</div></div>
-              <div class="input"><label>[SELECT] Category *</label><div class="select">Vegetable</div></div>
+              <div class="input"><label>Size *</label><div class="select">M</div></div>
+              <div class="input"><label>Category *</label><div class="select">Vegetable</div></div>
             </div>
             <div class="input error">
-              <label>[INPUT date] Best before *</label>
+              <label>Best before *</label>
               <div class="field">2026-05-10 📅</div>
               <div class="help" style="color:var(--error)">Must be a future date</div>
-              <div class="small mono" style="color:var(--ink-3)">// helper: Products past this date are hidden automatically</div>
             </div>
             ${callout("size ENUM = ('S','M','L','XL') validated before INSERT.",'⚡ size ENUM validated before MySQL')}
             ${callout('seller_id pulled from JWT server-side — never from form body.','⚡ seller_id from JWT')}
           </div>
           <div class="stack-12">
-            <div class="input"><label>[IMG UPLOAD] Photo</label><div class="img-ph upload" style="aspect-ratio:4/3">📷  Drag a file here or click to upload</div></div>
+            <div class="input"><label>Photo</label><div class="img-ph upload" style="aspect-ratio:4/3">📷  Drag a file here or click to upload</div></div>
             <div class="surface stack-8">
               <div class="small mono" style="color:var(--ink-3)">LIVE PREVIEW — how buyers will see it</div>
               ${productCard({name:'Heirloom tomato — Sungold',size:'M',exp:'2026-05-10',expDanger:true,price:'฿180'})}
@@ -876,7 +865,7 @@
       ${navBarMobile.replace('🛒','👑')}
       <div class="row" style="gap:6px"><div class="h1">Admin</div><span class="badge" style="background:#111;color:#fff;border-color:#111">ADMIN</span></div>
       ${callout('Requires role=admin in JWT. All other roles → 403.','👑 Admin role required')}
-      <div style="display:flex;gap:8px;overflow:auto">
+      <div class="vv-scroll-x">
         <div class="stat" style="min-width:140px"><div class="k">Total users</div><div class="v">1,284</div></div>
         <div class="stat" style="min-width:140px"><div class="k">Active listings</div><div class="v">312</div></div>
         <div class="stat" style="min-width:140px"><div class="k">Orders today</div><div class="v">48</div></div>
@@ -898,7 +887,7 @@
         ].map(r=>`
           <div class="surface" style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center">
             <div><div class="mono small">${r[0]}</div><div class="small">${r[1]}</div></div>
-            <div style="text-align:right"><div class="mono">฿${r[2]}</div><span class="badge" style="${r[3]==='Cancelled'?'color:var(--error);border-color:var(--error)':''}">${r[3]}</span></div>
+            <div class="vv-right"><div class="mono">฿${r[2]}</div><span class="badge" style="${r[3]==='Cancelled'?'color:var(--error);border-color:var(--error)':''}">${r[3]}</span></div>
           </div>`).join('')}
       </div>
       ${api('GET /api/admin/orders?limit=5')}
@@ -991,14 +980,14 @@
       <div class="modal-overlay">
         <div class="surface stack-8">
           <div class="h3">Add slot</div>
-          <div class="input"><label>[INPUT date] Date *</label><div class="field">2026-06-08 📅</div></div>
+          <div class="input"><label>Date *</label><div class="field">2026-06-08 📅</div></div>
           <div class="grid-2">
-            <div class="input ok"><label>[INPUT time] Start *</label><div class="field">09:00</div></div>
-            <div class="input ok"><label>[INPUT time] End *</label><div class="field">12:00</div></div>
+            <div class="input ok"><label>Start *</label><div class="field">09:00</div></div>
+            <div class="input ok"><label>End *</label><div class="field">12:00</div></div>
           </div>
           <div class="callout ok" style="background:#F1F8F1"><span class="pin">✓</span><div><span class="lbl">VALIDATION</span>end &gt; start</div></div>
           <div class="callout error"><span class="pin">✗</span><div><span class="lbl">EXAMPLE — INVALID</span>end (08:00) &lt; start (09:00)</div></div>
-          <div class="input"><label>[INPUT number] Max orders *</label><div class="field">10</div></div>
+          <div class="input"><label>Max orders *</label><div class="field">10</div></div>
           <div class="row" style="gap:8px"><button class="btn">Create slot</button><button class="btn ghost">Cancel</button></div>
         </div>
       </div>
@@ -1045,14 +1034,14 @@
           </div>
           <div class="surface stack-8" style="position:sticky;top:8px">
             <div class="h2">Add pickup slot</div>
-            <div class="input"><label>[INPUT date] Date *</label><div class="field">2026-06-08 📅</div></div>
+            <div class="input"><label>Date *</label><div class="field">2026-06-08 📅</div></div>
             <div class="grid-2">
-              <div class="input ok"><label>[INPUT time] Start *</label><div class="field">09:00</div></div>
-              <div class="input ok"><label>[INPUT time] End *</label><div class="field">12:00</div></div>
+              <div class="input ok"><label>Start *</label><div class="field">09:00</div></div>
+              <div class="input ok"><label>End *</label><div class="field">12:00</div></div>
             </div>
             <div class="callout ok" style="background:#F1F8F1"><span class="pin">✓</span><div><span class="lbl">LIVE VALIDATION</span>end &gt; start</div></div>
             <div class="callout error"><span class="pin">✗</span><div><span class="lbl">ERROR EXAMPLE</span>end (08:00) ≤ start (09:00)</div></div>
-            <div class="input ok"><label>[INPUT number] Max orders *</label><div class="field">10</div><div class="help mono">must be &gt; 0</div></div>
+            <div class="input ok"><label>Max orders *</label><div class="field">10</div><div class="help mono">must be &gt; 0</div></div>
             <div class="row" style="gap:8px"><button class="btn">Create slot</button><button class="btn ghost">Reset</button></div>
             ${api('POST /api/pickup-slots')}
           </div>
