@@ -90,6 +90,16 @@ const addItem = async (user_id, product_id, quantity) => {
     );
   }
 
+  // Emit cart update to user's socket room (if socket server available)
+  try{
+    const io = require('../lib/socket').get();
+    if(io){
+      const items = await getCart(user_id);
+      const total = items.reduce((s,i)=>s+Number(i.subtotal||0),0);
+      io.to(`user:${user_id}`).emit('cart:update', { items, total, count: items.length });
+    }
+  }catch(e){ /* non-fatal */ }
+
   return { message: 'Item added to cart' };
 };
 
@@ -131,6 +141,15 @@ const updateItem = async (cart_item_id, user_id, quantity) => {
     [quantity, cart_item_id, user_id]
   );
 
+  try{
+    const io = require('../lib/socket').get();
+    if(io){
+      const items = await getCart(user_id);
+      const total = items.reduce((s,i)=>s+Number(i.subtotal||0),0);
+      io.to(`user:${user_id}`).emit('cart:update', { items, total, count: items.length });
+    }
+  }catch(e){ }
+
   return { message: 'Cart updated' };
 };
 
@@ -149,6 +168,14 @@ const removeItem = async (cart_item_id, user_id) => {
   if (result.affectedRows === 0) {
     throw new Error('Cart item not found');
   }
+  try{
+    const io = require('../lib/socket').get();
+    if(io){
+      const items = await getCart(user_id);
+      const total = items.reduce((s,i)=>s+Number(i.subtotal||0),0);
+      io.to(`user:${user_id}`).emit('cart:update', { items, total, count: items.length });
+    }
+  }catch(e){}
   return { message: 'Item removed from cart' };
 };
 
@@ -163,6 +190,12 @@ const clearCart = async (user_id, conn = pool) => {
     'DELETE FROM cart_items WHERE user_id = ?',
     [user_id]
   );
+  try{
+    const io = require('../lib/socket').get();
+    if(io){
+      io.to(`user:${user_id}`).emit('cart:update', { items: [], total: 0, count: 0 });
+    }
+  }catch(e){}
 };
 
 module.exports = {

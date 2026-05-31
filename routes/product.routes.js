@@ -6,6 +6,11 @@ const controller            = require('../controllers/product.controller');
 
 // Public routes — no auth required
 router.get('/',    controller.getAll);
+router.get('/mine',
+  authenticate,
+  requireRole('seller', 'admin'),
+  controller.getMine
+);
 router.get('/:id', controller.getById);
 
 // Protected routes — seller or admin only
