@@ -191,7 +191,7 @@ async function bindProducts(pageId, filters={}, page=1) {
 
     const cards = products.map(p => window.productCard({
       id: p.id, name: p.name, size: p.size,
-      price: money(p.price), exp: dateOnly(p.best_before), category: p.category
+      price: money(p.price), exp: dateOnly(p.best_before), category: p.category, image_url: p.image_url
     })).join('') || '<div class="surface small">No products available.</div>';
 
     if (pageId === 'p1') {
@@ -533,17 +533,60 @@ async function bindListingForm(productId=null) {
       <div class="grid-2"><div class="input"><label>Price *</label><input class="field" type="number" min="0.01" step="0.01" name="price" value="${esc(product?.price || '')}" required></div><div class="input"><label>Quantity *</label><input class="field" type="number" min="0" name="quantity" value="${esc(product?.quantity || '')}" required></div></div>
       <div class="grid-2"><div class="input"><label>Size *</label><select class="field" name="size">${['S','M','L','XL'].map(s=>`<option ${product?.size===s || (!product && s==='M') ? 'selected' : ''}>${s}</option>`).join('')}</select></div><div class="input"><label>Category</label><select class="field" name="category">${['Vegetable','Fruit','Herb','Honey','Egg'].map(c=>`<option ${product?.category===c ? 'selected' : ''}>${c}</option>`).join('')}</select></div></div>
       <div class="input"><label>Best before *</label><input class="field" type="date" name="best_before" value="${esc(dateOnly(product?.best_before || ''))}" required></div>
+      <div class="input">
+        <label>Photo</label>
+        <input type="file" class="vv-photo-input" accept="image/*" style="display:none">
+        <div class="vv-upload-zone img-ph" style="aspect-ratio:4/3;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;border:2px dashed var(--line);border-radius:8px;transition:border-color .2s">
+          <span style="font-size:24px">📷</span>
+          <span class="small">Drag a file here or click to upload</span>
+        </div>
+      </div>
       <button class="btn full" type="submit">Save listing</button>
     </form>`;
   document.querySelectorAll('.page-phone .stack-12, .page-desktop .stack-12').forEach((el, idx) => { if (idx < 2) el.innerHTML = formHtml; });
+
   document.querySelectorAll('.vv-listing-form').forEach(form => {
+    const zone = form.querySelector('.vv-upload-zone');
+    const input = form.querySelector('.vv-photo-input');
+
+    zone.addEventListener('click', () => input.click());
+
+    input.addEventListener('change', () => {
+      const file = input.files[0];
+      if (file) showPreview(zone, file);
+    });
+
+    zone.addEventListener('dragover', e => {
+      e.preventDefault();
+      zone.style.borderColor = '#111';
+    });
+    zone.addEventListener('dragleave', () => {
+      zone.style.borderColor = '';
+    });
+    zone.addEventListener('drop', e => {
+      e.preventDefault();
+      zone.style.borderColor = '';
+      const file = e.dataTransfer.files[0];
+      if (file && file.type.startsWith('image/')) showPreview(zone, file);
+    });
+
     form.addEventListener('submit', async e => {
       e.preventDefault();
       try {
+        const data = Object.fromEntries(new FormData(form));
+        const file = input.files[0];
+        if (file) {
+          const fd = new FormData();
+          fd.append('image', file);
+          const uploadRes = await authFetch('/api/upload', { method: 'POST', body: fd });
+          if (!uploadRes.ok) throw new Error('Image upload failed');
+          const { url } = await uploadRes.json();
+          data.image_url = url;
+        }
         await request(productId ? `/api/products/${encodeURIComponent(productId)}` : '/api/products', {
           method: productId ? 'PUT' : 'POST',
           headers:{'Content-Type':'application/json'},
-          body: JSON.stringify(Object.fromEntries(new FormData(form)))
+          body: JSON.stringify(data)
         });
         navigate('/seller');
       } catch (err) {
@@ -551,6 +594,14 @@ async function bindListingForm(productId=null) {
       }
     });
   });
+
+  function showPreview(zone, file) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      zone.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:6px">`;
+    };
+    reader.readAsDataURL(file);
+  }
 }
 
 async function bindAdminDashboard() {

@@ -51,12 +51,12 @@ const getBySeller = async (seller_id) => {
  * @param {{ seller_id, name, description, price, quantity, size, category, best_before }} data
  * @returns {Promise<object>}
  */
-const create = async ({ seller_id, name, description, price, quantity, size, category, best_before }) => {
+const create = async ({ seller_id, name, description, price, quantity, size, category, best_before, image_url }) => {
   const [result] = await pool.query(
     `INSERT INTO products
-       (seller_id, name, description, price, quantity, size, category, best_before)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    [seller_id, name, description ?? null, price, quantity, size, category ?? null, best_before]
+       (seller_id, name, description, price, quantity, size, category, best_before, image_url)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [seller_id, name, description ?? null, price, quantity, size, category ?? null, best_before, image_url ?? null]
   );
 
   const [rows] = await pool.query(
@@ -85,7 +85,7 @@ const update = async (id, seller_id, fields) => {
   }
 
   // Column names from hardcoded allowlist — safe to interpolate
-  const allowed = ['name', 'description', 'price', 'quantity', 'size', 'category', 'best_before'];
+  const allowed = ['name', 'description', 'price', 'quantity', 'size', 'category', 'best_before', 'image_url'];
   const updates = [];
   const params  = [];
 

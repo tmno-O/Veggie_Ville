@@ -3,11 +3,28 @@ const express = require('express');
 const cors    = require('cors');
 const http    = require('http');
 const path    = require('path');
+const multer  = require('multer');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, path.join(__dirname, 'public/uploads')),
+  filename:    (req, file, cb) => cb(null, `${Date.now()}-${file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_')}`)
+});
+const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 }, fileFilter: (req, file, cb) => {
+  if (file.mimetype.startsWith('image/')) cb(null, true);
+  else cb(new Error('Only image files are allowed'));
+}});
+
+const authenticate = require('./middlewares/auth');
+app.post('/api/upload', authenticate, upload.single('image'), (req, res) => {
+  if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
+  res.json({ url: `/uploads/${req.file.filename}` });
+});
 app.get('/', (_req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
 // Health check
@@ -23,7 +40,6 @@ app.use('/api/admin/users',  require('./routes/admin.routes'));
 
 // Admin order route (reuse same controller)
 const orderController = require('./controllers/order.controller');
-const authenticate    = require('./middlewares/auth');
 const requireRole     = require('./middlewares/role');
 
 app.get(

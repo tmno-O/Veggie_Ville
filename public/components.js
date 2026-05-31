@@ -70,7 +70,7 @@
     </div>`;
 
   const productCard = (opts={}) => {
-    const {size='M', exp='2027-08-12', expDanger=false, name='Cherry tomato', price='฿120', addBtn=true, id=null, category: explicitCategory=null} = opts;
+    const {size='M', exp='2027-08-12', expDanger=false, name='Cherry tomato', price='฿120', addBtn=true, id=null, category: explicitCategory=null, image_url=null} = opts;
     // infer category from name when not explicitly provided
     const nl = (name||'').toLowerCase();
     let category = 'Vegetable';
@@ -86,9 +86,13 @@
     const safePrice = escapeHtml(price);
     const safeExp = escapeHtml(exp);
     const safeId = escapeHtml(slug);
+    const safeImg = image_url ? escapeHtml(image_url) : null;
     return `
       <div class="pcard" data-id="${safeId}" data-name="${safeName}" data-category="${safeCategory}" data-size="${safeSize}" data-price="${safePrice}" data-exp="${safeExp}">
-        <div class="img-ph" style="border-radius:0;border-left:none;border-right:none;border-top:none"></div>
+        ${safeImg
+          ? `<img src="${safeImg}" alt="${safeName}" style="width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:0;display:block">`
+          : `<div class="img-ph" style="border-radius:0;border-left:none;border-right:none;border-top:none"></div>`
+        }
         <div class="body">
           <div class="name">${safeName}</div>
           <div class="meta">
@@ -377,7 +381,7 @@
       ${callout('Email must be unique; bcrypt-hash password before storing in MySQL.','⚡ Unique email + password hash')}
     `,
     desktop:`
-      ${navBarDesktopAdmin.replace('Admin Console','Veggie Ville').replace('<span class="badge" style="margin-left:8px">👑 ADMIN</span>','')}
+      ${navBarMobileLogoOnly}
       <div class="vv-grid-hero">
         <div class="vv-hero-left">
           <div class="img-ph banner" style="aspect-ratio:4/3;max-width:480px"></div>
