@@ -7,19 +7,19 @@
   const navBarMobile = `
     <div class="nav-bar vvn-bar">
       <button class="icon" title="hamburger" style="background:none;border:none;cursor:pointer;font-size:18px;padding:8px;color:#242220">☰</button>
-      <div class="logo vvn-logo" style="display:flex;align-items:center;gap:8px;cursor:pointer;text-decoration:none">
+      <div class="logo vvn-logo" data-route="/" style="display:flex;align-items:center;gap:8px;cursor:pointer;text-decoration:none">
         <div class="vvn-logo-icon">🌱</div>
         <div class="vvn-logo-text">
           <div class="vvn-logo-name">Veggie Ville</div>
         </div>
       </div>
       <div style="flex:1"></div>
-      <div class="icon" title="cart" style="position:relative;cursor:pointer;font-size:18px;padding:8px;display:flex;align-items:center;justify-content:center">🛒</div>
+      <div class="icon" title="cart" data-route="/cart" style="position:relative;cursor:pointer;font-size:18px;padding:8px;display:flex;align-items:center;justify-content:center">🛒</div>
     </div>`;
 
   const navBarMobileLogoOnly = `
     <div class="nav-bar vvn-bar" style="justify-content:center">
-      <div class="logo vvn-logo" style="display:flex;align-items:center;gap:8px;cursor:pointer">
+      <div class="logo vvn-logo" data-route="/" style="display:flex;align-items:center;gap:8px;cursor:pointer">
         <div class="vvn-logo-icon">🌱</div>
         <div class="vvn-logo-text">
           <div class="vvn-logo-name">Veggie Ville</div>
@@ -30,7 +30,7 @@
 
   const navBarDesktop = `
     <div class="nav-bar vvn-bar">
-      <div class="logo vvn-logo" style="display:flex;align-items:center;gap:10px;cursor:pointer;flex-shrink:0;text-decoration:none">
+      <div class="logo vvn-logo" data-route="/" style="display:flex;align-items:center;gap:10px;cursor:pointer;flex-shrink:0;text-decoration:none">
         <div class="vvn-logo-icon">🌱</div>
         <div class="vvn-logo-text">
           <div class="vvn-logo-name">Veggie Ville</div>
@@ -38,20 +38,20 @@
         </div>
       </div>
       <div class="vvn-links">
-        <span class="vvn-link link">Browse</span>
-        <span class="vvn-link link">Sell</span>
+        <span class="vvn-link link" data-route="/browse">Browse</span>
+        <span class="vvn-link link" data-route="/seller">Sell</span>
         <span class="vvn-link link" data-route="/#how-it-works">How It Works</span>
       </div>
       <div style="flex:1"></div>
       <div style="display:flex;align-items:center;gap:8px">
-        <div class="icon" title="cart" style="width:40px;height:40px;border-radius:8px;border:1px solid var(--vv-border);background:white;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;position:relative">🛒</div>
+        <div class="icon" title="cart" data-route="/cart" style="width:40px;height:40px;border-radius:8px;border:1px solid var(--vv-border);background:white;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;position:relative">🛒</div>
         <div class="avatar" style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#AEDDC2,#4DB37D);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#1A723E;cursor:pointer;border:2px solid #D6F0E0;flex-shrink:0">VV</div>
       </div>
     </div>`;
 
   const navBarDesktopAdmin = `
     <div class="nav-bar vvn-bar">
-      <div class="logo vvn-logo" style="display:flex;align-items:center;gap:10px;cursor:pointer;flex-shrink:0">
+      <div class="logo vvn-logo" data-route="/" style="display:flex;align-items:center;gap:10px;cursor:pointer;flex-shrink:0">
         <div class="vvn-logo-icon">🌱</div>
         <div class="vvn-logo-text">
           <div class="vvn-logo-name">Veggie Ville — Admin</div>
@@ -65,10 +65,10 @@
 
   const bottomNav = `
     <div class="bottom-nav">
-      <div class="b"><div class="ic"></div>Home</div>
-      <div class="b"><div class="ic"></div>Browse</div>
-      <div class="b"><div class="ic"></div>Cart</div>
-      <div class="b"><div class="ic"></div>Me</div>
+      <div class="b" data-route="/"><div class="ic"></div>Home</div>
+      <div class="b" data-route="/browse"><div class="ic"></div>Browse</div>
+      <div class="b" data-route="/cart"><div class="ic"></div>Cart</div>
+      <div class="b" data-route="/orders"><div class="ic"></div>Me</div>
     </div>`;
 
   const footerMini = `<div class="footer-mini">© 2026 Veggie Ville · Terms · Privacy</div>`;
@@ -829,10 +829,10 @@
       <div class="h1">Seller dashboard</div>
       ${callout('Requires role=seller in JWT claims. Buyer-only accounts see upgrade prompt.','🔒 Auth gate: seller role required')}
       <div class="vv-scroll-x">
-        <div class="stat" style="min-width:140px"><div class="k">Listings</div><div class="v">12</div></div>
-        <div class="stat" style="min-width:140px"><div class="k">Active</div><div class="v">9</div></div>
-        <div class="stat" style="min-width:140px"><div class="k">Expiring &lt;7d</div><div class="v">3</div></div>
-        <div class="stat" style="min-width:140px"><div class="k">Sales (30d)</div><div class="v">฿8.4k</div></div>
+        <div class="stat" style="min-width:140px"><div class="k">Listings</div><div class="v vv-stat-total">—</div></div>
+        <div class="stat" style="min-width:140px"><div class="k">Active</div><div class="v vv-stat-active">—</div></div>
+        <div class="stat" style="min-width:140px"><div class="k">Expiring &lt;7d</div><div class="v vv-stat-expiring">—</div></div>
+        <div class="stat" style="min-width:140px"><div class="k">Sales (30d)</div><div class="v vv-stat-sales">—</div></div>
       </div>
       <div class="tabs"><div class="t active">My listings</div><div class="t">Orders received</div></div>
       <div class="stack-12">
@@ -869,10 +869,10 @@
           <div class="row between" style="margin-bottom:12px"><div class="h1">Seller dashboard</div><button class="btn">+ Add new listing</button></div>
           ${callout('JWT must contain role=seller. Else 403.','🔒 Seller role required')}
           <div class="grid-4" style="margin-top:12px">
-            <div class="stat"><div class="k">Total listings</div><div class="v">12</div><div class="d">+2 this week</div></div>
-            <div class="stat"><div class="k">Active</div><div class="v">9</div></div>
-            <div class="stat"><div class="k">Expiring &lt;7d</div><div class="v" style="color:var(--error)">3</div><div class="d">Action needed</div></div>
-            <div class="stat"><div class="k">Sales (30d)</div><div class="v">฿8,420</div></div>
+            <div class="stat"><div class="k">Total listings</div><div class="v vv-stat-total">—</div></div>
+            <div class="stat"><div class="k">Active</div><div class="v vv-stat-active">—</div></div>
+            <div class="stat"><div class="k">Expiring &lt;7d</div><div class="v vv-stat-expiring" style="color:var(--error)">—</div></div>
+            <div class="stat"><div class="k">Sales (30d)</div><div class="v vv-stat-sales">—</div></div>
           </div>
           <div class="tabs" style="margin-top:16px"><div class="t active">My listings</div><div class="t">Orders received</div></div>
           <div class="surface" style="padding:0;overflow:hidden;margin-top:12px">

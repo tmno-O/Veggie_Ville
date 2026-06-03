@@ -151,8 +151,10 @@ const getReceived = async (req, res) => {
 
 /**
  * PATCH /api/orders/:id/status
- * Update order status — seller or admin
+ * Update order status — admin can update any order; seller must own a product in it.
  */
+const ALLOWED_STATUSES = ['pending', 'confirmed', 'shipped', 'cancelled'];
+
 const updateStatus = async (req, res) => {
   try {
     const { id } = req.params;
@@ -161,13 +163,22 @@ const updateStatus = async (req, res) => {
     if (!status) {
       return res.status(400).json({ message: 'Status is required' });
     }
+    if (!ALLOWED_STATUSES.includes(status)) {
+      return res.status(400).json({
+        message: `Status must be one of: ${ALLOWED_STATUSES.join(', ')}`
+      });
+    }
 
-    const result = await orderService.updateStatus(id, status);
+    const actor = { id: req.user.id, role: req.user.role };
+    const result = await orderService.updateStatus(Number(id), status, actor);
     res.json(result);
   } catch (err) {
     console.error('[order.controller] updateStatus:', err);
     if (err.message === 'Order not found') {
       return res.status(404).json({ message: err.message });
+    }
+    if (err.code === 'ORDER_FORBIDDEN' || err.message === 'Forbidden') {
+      return res.status(403).json({ message: 'Forbidden' });
     }
     res.status(500).json({ message: 'Internal server error' });
   }

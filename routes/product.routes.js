@@ -7,7 +7,14 @@ const controller            = require('../controllers/product.controller');
 // Public routes — no auth required
 router.get('/', controller.getAll);
 
-// Seller-only: must be before /:id so Express doesn't swallow "mine" as an id param
+// Seller-only static routes — registered before /:id so Express doesn't swallow them as id params.
+// /mine/stats must also come before /mine so it is not matched by /mine with an extra segment.
+router.get('/mine/stats',
+  authenticate,
+  requireRole('seller', 'admin'),
+  controller.getMineStats
+);
+
 router.get('/mine',
   authenticate,
   requireRole('seller', 'admin'),

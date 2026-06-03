@@ -845,6 +845,19 @@ async function bindSellerDashboard() {
   const containers = document.querySelectorAll('.page-phone .stack-12, .page-desktop tbody');
   containers.forEach(el => { el.innerHTML = '<div class="surface small">Loading…</div>'; });
 
+  // Fetch and render real stats — non-blocking (listings still load if this fails)
+  document.querySelectorAll('.vv-stat-total, .vv-stat-active, .vv-stat-expiring, .vv-stat-sales')
+    .forEach(el => { el.textContent = '…'; });
+  request('/api/products/mine/stats').then(stats => {
+    document.querySelectorAll('.vv-stat-total').forEach(el => { el.textContent = stats.totalListings; });
+    document.querySelectorAll('.vv-stat-active').forEach(el => { el.textContent = stats.activeListings; });
+    document.querySelectorAll('.vv-stat-expiring').forEach(el => { el.textContent = stats.expiringSoon; });
+    document.querySelectorAll('.vv-stat-sales').forEach(el => { el.textContent = money(stats.sales30d); });
+  }).catch(() => {
+    document.querySelectorAll('.vv-stat-total, .vv-stat-active, .vv-stat-expiring, .vv-stat-sales')
+      .forEach(el => { if (el.textContent === '…') el.textContent = '0'; });
+  });
+
   // Bind sidebar navigation (desktop only, bind once per render)
   const sellerSidePanel = document.querySelector('.page-desktop .side-panel');
   if (sellerSidePanel && !sellerSidePanel.dataset.sidebarBound) {

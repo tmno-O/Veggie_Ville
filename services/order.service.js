@@ -239,20 +239,45 @@ const getReceivedOrders = async (seller_id) => {
 };
 
 /**
- * Update order status
+ * Update order status — admin can update any order; seller must own a product in it.
  * @param {number} order_id
- * @param {string} status
+ * @param {string} status   - must be one of the allowed enum values
+ * @param {{ id: number, role: string }} actor  - from JWT
  * @returns {Promise<object>}
  */
-const updateStatus = async (order_id, status) => {
-  const [result] = await pool.query(
+const updateStatus = async (order_id, status, actor) => {
+  // Verify order exists
+  const [orders] = await pool.query(
+    'SELECT id FROM orders WHERE id = ?',
+    [order_id]
+  );
+  if (orders.length === 0) {
+    throw new Error('Order not found');
+  }
+
+  // Sellers must own at least one product in this order
+  if (actor.role !== 'admin') {
+    const [owned] = await pool.query(
+      `SELECT o.id
+       FROM orders o
+       JOIN order_items oi ON oi.order_id = o.id
+       JOIN products p ON p.id = oi.product_id
+       WHERE o.id = ? AND p.seller_id = ?
+       LIMIT 1`,
+      [order_id, actor.id]
+    );
+    if (owned.length === 0) {
+      const err = new Error('Forbidden');
+      err.code = 'ORDER_FORBIDDEN';
+      throw err;
+    }
+  }
+
+  await pool.query(
     'UPDATE orders SET status = ? WHERE id = ?',
     [status, order_id]
   );
-  if (result.affectedRows === 0) {
-    throw new Error('Order not found');
-  }
-  return { id: order_id, status };
+  return { id: Number(order_id), status };
 };
 
 module.exports = {

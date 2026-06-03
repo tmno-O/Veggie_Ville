@@ -54,7 +54,8 @@ CREATE TABLE orders (
   status         ENUM('pending','confirmed','shipped','cancelled') DEFAULT 'confirmed',
   created_at     TIMESTAMP     DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (buyer_id)       REFERENCES users(id)        ON DELETE CASCADE,
-  FOREIGN KEY (pickup_slot_id) REFERENCES pickup_slots(id) ON DELETE CASCADE
+  -- RESTRICT (not CASCADE): deleting a slot must not silently destroy order history
+  FOREIGN KEY (pickup_slot_id) REFERENCES pickup_slots(id) ON DELETE RESTRICT
 );
 
 CREATE TABLE order_items (

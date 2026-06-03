@@ -45,7 +45,7 @@ async function seedUsers() {
     console.log('\n🌱 Seeding test accounts...\n');
 
     for (const account of TEST_ACCOUNTS) {
-      const hashedPassword = await bcrypt.hash(account.password, 10);
+      const hashedPassword = await bcrypt.hash(account.password, 12);
 
       // Delete existing record
       await connection.query('DELETE FROM users WHERE email = ?', [account.email]);

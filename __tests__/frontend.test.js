@@ -28,6 +28,9 @@ async function loadApp({ route = '/', role = null, fetchImpl = null } = {}) {
     if (url === '/api/auth/me') {
       return role ? json({ id: 7, role }) : json({ message: 'Unauthorized' }, false, 401);
     }
+    if (url === '/api/products/mine/stats') {
+      return json({ totalListings: 1, activeListings: 1, expiringSoon: 0, sales30d: 0 });
+    }
     if (String(url).startsWith('/api/products/mine')) {
       return json([{ id: 3, seller_id: 7, name: 'Seller item', price: 20, size: 'M', category: 'Vegetable', quantity: 5, best_before: '2026-06-01' }]);
     }

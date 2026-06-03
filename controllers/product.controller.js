@@ -150,4 +150,17 @@ const getMine = async (req, res) => {
   }
 };
 
-module.exports = { getAll, getById, create, update, remove, getMine };
+/**
+ * GET /api/products/mine/stats
+ */
+const getMineStats = async (req, res) => {
+  try {
+    const stats = await productService.getMineStats(req.user.id);
+    res.json(stats);
+  } catch (err) {
+    console.error('[product.controller] getMineStats:', err);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+module.exports = { getAll, getById, create, update, remove, getMine, getMineStats };

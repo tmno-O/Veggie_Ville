@@ -10,7 +10,24 @@ const cors    = require('cors');
 const path    = require('path');
 
 const app = express();
-app.use(cors());
+
+// CORS — allowlist driven by CORS_ORIGIN env var (comma-separated for multiple origins).
+// Falls back to localhost:3000 for local development.
+// Same-origin requests (no Origin header) are always allowed.
+const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:3000')
+  .split(',')
+  .map(o => o.trim())
+  .filter(Boolean);
+
+app.use(cors({
+  origin(origin, callback) {
+    // No Origin header = same-origin or non-browser request — allow
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error(`CORS: origin '${origin}' not allowed`));
+  },
+  credentials: true
+}));
 app.use(express.json());
 
 // Serve frontend

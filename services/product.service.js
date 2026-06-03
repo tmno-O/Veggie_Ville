@@ -140,4 +140,33 @@ const getMine = async (seller_id) => {
   return rows;
 };
 
-module.exports = { getAll, getById, create, update, remove, getMine };
+/**
+ * Get statistics for a seller's dashboard
+ * @param {number} seller_id
+ * @returns {Promise<object>}
+ */
+const getMineStats = async (seller_id) => {
+  const [rows] = await pool.query(
+    `SELECT
+      (SELECT COUNT(*) FROM products WHERE seller_id = ?) as totalListings,
+      (SELECT COUNT(*) FROM products WHERE seller_id = ? AND best_before >= CURDATE() AND quantity > 0) as activeListings,
+      (SELECT COUNT(*) FROM products WHERE seller_id = ? AND best_before >= CURDATE() AND best_before < DATE_ADD(CURDATE(), INTERVAL 7 DAY)) as expiringSoon,
+      (SELECT SUM(o.total_price)
+       FROM orders o
+       JOIN order_items oi ON o.id = oi.order_id
+       JOIN products p ON oi.product_id = p.id
+       WHERE p.seller_id = ? AND o.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)) as sales30d`,
+    [seller_id, seller_id, seller_id, seller_id]
+  );
+  
+  // MySQL returns BigInt for COUNT in some drivers/configs, or strings. Ensure numbers.
+  const stats = rows[0];
+  return {
+    totalListings:  Number(stats.totalListings),
+    activeListings: Number(stats.activeListings),
+    expiringSoon:   Number(stats.expiringSoon),
+    sales30d:       Number(stats.sales30d || 0)
+  };
+};
+
+module.exports = { getAll, getById, create, update, remove, getMine, getMineStats };
