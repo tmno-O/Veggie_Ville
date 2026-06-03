@@ -694,6 +694,41 @@ async function bindSellerDashboard() {
     return;
   }
 
+  // Bind sidebar navigation (desktop only, bind once per render)
+  const sellerSidePanel = document.querySelector('.page-desktop .side-panel');
+  if (sellerSidePanel && !sellerSidePanel.dataset.sidebarBound) {
+    sellerSidePanel.dataset.sidebarBound = 'true';
+    sellerSidePanel.querySelectorAll('.check').forEach(item => {
+      item.style.cursor = 'pointer';
+      item.addEventListener('click', async () => {
+        sellerSidePanel.querySelectorAll('.check').forEach(c => c.classList.remove('on'));
+        item.classList.add('on');
+        const label = item.textContent.trim().toLowerCase();
+        if (label === 'dashboard') {
+          await bindSellerDashboard();
+        } else if (label === 'my listings') {
+          // Switch to My Listings tab and reload products
+          const listingsTab = document.querySelector('.page-desktop .tabs .t');
+          if (listingsTab) {
+            document.querySelectorAll('.page-desktop .tabs .t').forEach(t => t.classList.remove('active'));
+            listingsTab.classList.add('active');
+          }
+          await bindSellerDashboard();
+        } else if (label === 'orders') {
+          // Switch to Orders Received tab
+          const ordersTab = [...document.querySelectorAll('.page-desktop .tabs .t')].find(t => /orders received/i.test(t.textContent));
+          if (ordersTab) ordersTab.click();
+        } else if (label === 'settings') {
+          const content = document.querySelector('.page-desktop tbody')?.closest('table') || document.querySelector('.page-desktop .stack-12');
+          if (content) {
+            const parent = content.closest('div') || content.parentElement;
+            if (parent) parent.innerHTML = '<div class="surface small" style="padding:24px"><div class="h2" style="margin-bottom:8px">Settings</div><p>Seller settings coming soon.</p></div>';
+          }
+        }
+      });
+    });
+  }
+
   // Bind tab switching (only bind once per page render)
   document.querySelectorAll('.page-phone .tabs .t, .page-desktop .tabs .t').forEach(tab => {
     if (tab.dataset.tabBound) return;

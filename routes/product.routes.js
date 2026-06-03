@@ -5,7 +5,15 @@ const requireRole       = require('../middlewares/role');
 const controller            = require('../controllers/product.controller');
 
 // Public routes — no auth required
-router.get('/',    controller.getAll);
+router.get('/', controller.getAll);
+
+// Seller-only: must be before /:id so Express doesn't swallow "mine" as an id param
+router.get('/mine',
+  authenticate,
+  requireRole('seller', 'admin'),
+  controller.getMine
+);
+
 router.get('/:id', controller.getById);
 
 // Protected routes — seller or admin only
