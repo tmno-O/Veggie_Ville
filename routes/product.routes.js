@@ -6,6 +6,7 @@ const controller            = require('../controllers/product.controller');
 
 // Public routes — no auth required
 router.get('/', controller.getAll);
+router.get('/categories/counts', controller.getCategoryCounts);
 
 // Seller-only static routes — registered before /:id so Express doesn't swallow them as id params.
 // /mine/stats must also come before /mine so it is not matched by /mine with an extra segment.
@@ -20,6 +21,8 @@ router.get('/mine',
   requireRole('seller', 'admin'),
   controller.getMine
 );
+
+router.get('/:id/recommendations', controller.getRecommendations);
 
 router.get('/:id', controller.getById);
 

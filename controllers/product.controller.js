@@ -163,4 +163,32 @@ const getMineStats = async (req, res) => {
   }
 };
 
-module.exports = { getAll, getById, create, update, remove, getMine, getMineStats };
+/**
+ * GET /api/products/:id/recommendations
+ */
+const getRecommendations = async (req, res) => {
+  try {
+    const recommendations = await productService.getRecommendations(
+      Number(req.params.id)
+    );
+    res.json(recommendations);
+  } catch (err) {
+    console.error('[product.controller] getRecommendations:', err);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+/**
+ * GET /api/products/categories/counts
+ */
+const getCategoryCounts = async (req, res) => {
+  try {
+    const counts = await productService.getCategoryCounts();
+    res.json(counts);
+  } catch (err) {
+    console.error('[product.controller] getCategoryCounts:', err);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+module.exports = { getAll, getById, create, update, remove, getMine, getMineStats, getRecommendations, getCategoryCounts };

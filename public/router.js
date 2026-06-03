@@ -202,7 +202,11 @@ window.addEventListener('popstate', () => {
 });
 
 async function bindPage(pageId, params) {
-  if (pageId === 'p1' || pageId === 'p2') await bindProducts(pageId);
+  if (pageId === 'p1') {
+    await bindProducts(pageId);
+    await bindCategoryCounts();
+  }
+  if (pageId === 'p2') await bindProducts(pageId);
   if (pageId === 'p3') await bindProductDetail(params.productId);
   if (pageId === 'p4') bindRegister();
   if (pageId === 'p5') bindLogin();
@@ -213,6 +217,22 @@ async function bindPage(pageId, params) {
   if (pageId === 'p10') await bindListingForm(params.productId);
   if (pageId === 'p11') await bindAdminDashboard();
   if (pageId === 'p12') await bindPickupSlots();
+}
+
+async function bindCategoryCounts() {
+  try {
+    const counts = await request('/api/products/categories/counts');
+    const countMap = {};
+    counts.forEach(c => { countMap[c.category] = c.count; });
+    
+    document.querySelectorAll('.vv-cat-count').forEach(el => {
+      const cat = el.dataset.category;
+      const count = countMap[cat] || 0;
+      el.textContent = `${count} listing${count === 1 ? '' : 's'}`;
+    });
+  } catch (err) {
+    console.warn('Failed to fetch category counts:', err);
+  }
 }
 
 let _catalogFilters = {};
@@ -476,10 +496,38 @@ async function bindProductDetail(productId) {
       }
     });
     document.title = `Veggie Ville - ${p.name || 'Product Detail'}`;
-    const allProducts = await request('/api/products');
-    const more = (Array.isArray(allProducts) ? allProducts : (allProducts.items || []))
-      .filter(r => r.seller_id === p.seller_id && r.id !== p.id)
-      .slice(0, 4);
+
+    // === RECOMMENDATIONS WITH FALLBACK ===
+    let recs = [];
+    let isRecs = false;
+    try {
+      recs = await request(`/api/products/${encodeURIComponent(id)}/recommendations`);
+      if (Array.isArray(recs) && recs.length > 0) {
+        isRecs = true;
+      }
+    } catch (e) {
+      console.warn('Failed to fetch recommendations:', e);
+    }
+
+    let more = [];
+    let titleText = isRecs ? 'Users who bought this also liked' : `More from ${p.seller_name || 'this seller'}`;
+
+    if (isRecs) {
+      more = recs;
+    } else {
+      const allProducts = await request('/api/products');
+      more = (Array.isArray(allProducts) ? allProducts : (allProducts.items || []))
+        .filter(r => r.seller_id === p.seller_id && r.id !== p.id)
+        .slice(0, 4);
+    }
+
+    // Update section titles
+    document.querySelectorAll('.page-phone .h3, .page-desktop .h2').forEach(el => {
+      if (el.textContent.includes('More from') || el.textContent.includes('Users who bought')) {
+        el.textContent = titleText;
+      }
+    });
+
     document.querySelectorAll('.page-phone .vv-scroll-x').forEach(el => {
       el.innerHTML = more.map(r => `<div style="min-width:140px">${window.productCard({
         id: r.id, name: r.name, size: r.size,
@@ -895,37 +943,25 @@ async function bindSellerDashboard() {
         item.setAttribute('aria-pressed', 'true');
         
         const label = item.textContent.trim().toLowerCase();
-        if (label === 'dashboard' || label === 'my listings') {
-          if (!document.querySelector('.page-desktop tbody, .page-phone .stack-12')) {
-            await navigate('/seller', true);
+        const dashboardView = document.getElementById('vv-seller-dashboard-view');
+        const settingsView = document.getElementById('vv-seller-settings-view');
+
+        if (label === 'dashboard' || label === 'my listings' || label === 'orders') {
+          if (dashboardView) dashboardView.style.display = 'block';
+          if (settingsView) settingsView.style.display = 'none';
+
+          if (label === 'dashboard' || label === 'my listings') {
+            document.querySelectorAll('.page-phone .tabs .t, .page-desktop .tabs .t').forEach(t => {
+              if (/my listings/i.test(t.textContent)) t.click();
+            });
+          } else if (label === 'orders') {
+            document.querySelectorAll('.page-phone .tabs .t, .page-desktop .tabs .t').forEach(t => {
+              if (/orders received/i.test(t.textContent)) t.click();
+            });
           }
-          document.querySelectorAll('.page-phone .tabs .t, .page-desktop .tabs .t').forEach(t => {
-            if (/my listings/i.test(t.textContent)) t.click();
-          });
-        } else if (label === 'orders') {
-          if (!document.querySelector('.page-desktop tbody, .page-phone .stack-12')) {
-            await navigate('/seller', true);
-          }
-          document.querySelectorAll('.page-phone .tabs .t, .page-desktop .tabs .t').forEach(t => {
-            if (/orders received/i.test(t.textContent)) t.click();
-          });
         } else if (label === 'settings') {
-          const content = document.querySelector('.page-desktop tbody')?.closest('table') || document.querySelector('.page-desktop .stack-12');
-          if (content) {
-            const parent = content.closest('div') || content.parentElement;
-            if (parent) {
-              parent.innerHTML = `
-                <div class="surface" style="padding:32px;text-align:center">
-                  <div class="h2" style="margin-bottom:12px">Seller Settings</div>
-                  <p class="small" style="margin-bottom:24px">Manage your shop profile, notification preferences, and payout methods.</p>
-                  <div class="stack-12" style="max-width:400px;margin:0 auto;text-align:left">
-                    <div class="input"><label>Shop Name</label><input class="field" value="My Garden Shop"></div>
-                    <div class="input"><label>Notification Email</label><input class="field" value="seller@test.com"></div>
-                    <button class="btn disabled">Save Changes (Coming Soon)</button>
-                  </div>
-                </div>`;
-            }
-          }
+          if (dashboardView) dashboardView.style.display = 'none';
+          if (settingsView) settingsView.style.display = 'block';
         }
       };
 

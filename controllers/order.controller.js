@@ -66,6 +66,13 @@ const checkout = async (req, res) => {
   } catch (err) {
     console.error('[order.controller] checkout:', err);
 
+    if (err.code === 'OUT_OF_STOCK') {
+      return res.status(400).json({
+        code: 'OUT_OF_STOCK',
+        message: err.message
+      });
+    }
+
     if (err.message === 'Invalid pickup slot') {
       return res.status(400).json({ message: err.message });
     }

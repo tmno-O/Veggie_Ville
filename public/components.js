@@ -276,14 +276,14 @@
           </div>
           <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:16px">
             ${[
-              {name:'Vegetable',emoji:'🥬',count:'42'},
-              {name:'Fruit',emoji:'🍓',count:'28'},
-              {name:'Herb',emoji:'🌿',count:'35'},
-              {name:'Honey',emoji:'🍯',count:'12'},
-              {name:'Egg',emoji:'🥚',count:'18'},
+              {name:'Vegetable',emoji:'🥬',count:'0'},
+              {name:'Fruit',emoji:'🍓',count:'0'},
+              {name:'Herb',emoji:'🌿',count:'0'},
+              {name:'Honey',emoji:'🍯',count:'0'},
+              {name:'Egg',emoji:'🥚',count:'0'},
             ].map(cat=>{
               const meta = CAT_META[cat.name] || CAT_META.Vegetable;
-              return `<div style="background:${meta.bg};border-radius:20px;padding:28px 16px;text-align:center;cursor:pointer;border:1px solid rgba(255,255,255,0.7);transition:transform 0.2s" onmouseover="this.style.transform='translateY(-4px)'" onmouseout="this.style.transform=''"><div style="font-size:40px;margin-bottom:12px">${cat.emoji}</div><div style="font-weight:700;font-size:15px;color:#242220">${cat.name}s</div><div style="font-size:12px;color:#6E6B65;margin-top:4px">${cat.count} listings</div></div>`;
+              return `<div style="background:${meta.bg};border-radius:20px;padding:28px 16px;text-align:center;cursor:pointer;border:1px solid rgba(255,255,255,0.7);transition:transform 0.2s" onmouseover="this.style.transform='translateY(-4px)'" onmouseout="this.style.transform=''" onclick="window.VVLoadProducts({category:'${cat.name}'});window.VVNavigate('/browse')"><div style="font-size:40px;margin-bottom:12px">${cat.emoji}</div><div style="font-weight:700;font-size:15px;color:#242220">${cat.name}s</div><div class="vv-cat-count" data-category="${cat.name}" style="font-size:12px;color:#6E6B65;margin-top:4px">${cat.count} listings</div></div>`;
             }).join('')}
           </div>
         </div>
@@ -865,41 +865,55 @@
           <div class="check"><span class="box"></span>Orders</div>
           <div class="check"><span class="box"></span>Settings</div>
         </aside>
-        <div style="flex:1;padding:24px">
-          <div class="row between" style="margin-bottom:12px"><div class="h1">Seller dashboard</div><button class="btn" data-route="/listing">+ Add new listing</button></div>
-          ${callout('JWT must contain role=seller. Else 403.','🔒 Seller role required')}
-          <div class="grid-4" style="margin-top:12px">
-            <div class="stat"><div class="k">Total listings</div><div class="v vv-stat-total">—</div></div>
-            <div class="stat"><div class="k">Active</div><div class="v vv-stat-active">—</div></div>
-            <div class="stat"><div class="k">Expiring &lt;7d</div><div class="v vv-stat-expiring" style="color:var(--error)">—</div></div>
-            <div class="stat"><div class="k">Sales (30d)</div><div class="v vv-stat-sales">—</div></div>
+        <div id="vv-seller-content" style="flex:1;padding:24px">
+          <div id="vv-seller-dashboard-view">
+            <div class="row between" style="margin-bottom:12px"><div class="h1">Seller dashboard</div><button class="btn" data-route="/listing">+ Add new listing</button></div>
+            ${callout('JWT must contain role=seller. Else 403.','🔒 Seller role required')}
+            <div class="grid-4" style="margin-top:12px">
+              <div class="stat"><div class="k">Total listings</div><div class="v vv-stat-total">—</div></div>
+              <div class="stat"><div class="k">Active</div><div class="v vv-stat-active">—</div></div>
+              <div class="stat"><div class="k">Expiring &lt;7d</div><div class="v vv-stat-expiring" style="color:var(--error)">—</div></div>
+              <div class="stat"><div class="k">Sales (30d)</div><div class="v vv-stat-sales">—</div></div>
+            </div>
+            <div class="tabs" style="margin-top:16px"><div class="t active">My listings</div><div class="t">Orders received</div></div>
+            <div class="surface" style="padding:0;overflow:hidden;margin-top:12px">
+              <table class="tbl">
+                <thead><tr><th></th><th>Name</th><th>Size</th><th>Price</th><th>Stock</th><th>Best before</th><th>Status</th><th></th></tr></thead>
+                <tbody>
+                  ${[
+                    ['Heirloom tomato','M',180,12,'2026-06-02','Active',false],
+                    ['Basil bunch','S',45,30,'2026-05-18','Expiring',true],
+                    ['Free-range eggs','L',180,24,'2026-06-04','Active',false],
+                    ['Wildflower honey','M',320,8,'2027-01-01','Active',false],
+                    ['Mint','S',30,18,'2026-05-22','Expiring',true],
+                  ].map(r=>`
+                  <tr>
+                    <td><div class="img-ph" style="width:48px;height:48px;aspect-ratio:1/1"></div></td>
+                    <td><div style="font-weight:600">${r[0]}</div></td>
+                    <td><span class="badge">${r[1]}</span></td>
+                    <td class="mono">฿${r[2]}</td>
+                    <td class="mono">${r[3]}</td>
+                    <td><span class="tag ${r[6]?'danger':''}">⏳ ${r[4]}</span></td>
+                    <td><span class="badge" style="${r[6]?'color:var(--error);border-color:var(--error)':''}">${r[5]}</span></td>
+                    <td><button class="btn ghost sm">Edit</button> <button class="btn danger sm">🗑</button></td>
+                  </tr>`).join('')}
+                </tbody>
+              </table>
+            </div>
+            ${api('GET /api/products')}
           </div>
-          <div class="tabs" style="margin-top:16px"><div class="t active">My listings</div><div class="t">Orders received</div></div>
-          <div class="surface" style="padding:0;overflow:hidden;margin-top:12px">
-            <table class="tbl">
-              <thead><tr><th></th><th>Name</th><th>Size</th><th>Price</th><th>Stock</th><th>Best before</th><th>Status</th><th></th></tr></thead>
-              <tbody>
-                ${[
-                  ['Heirloom tomato','M',180,12,'2026-06-02','Active',false],
-                  ['Basil bunch','S',45,30,'2026-05-18','Expiring',true],
-                  ['Free-range eggs','L',180,24,'2026-06-04','Active',false],
-                  ['Wildflower honey','M',320,8,'2027-01-01','Active',false],
-                  ['Mint','S',30,18,'2026-05-22','Expiring',true],
-                ].map(r=>`
-                <tr>
-                  <td><div class="img-ph" style="width:48px;height:48px;aspect-ratio:1/1"></div></td>
-                  <td><div style="font-weight:600">${r[0]}</div></td>
-                  <td><span class="badge">${r[1]}</span></td>
-                  <td class="mono">฿${r[2]}</td>
-                  <td class="mono">${r[3]}</td>
-                  <td><span class="tag ${r[6]?'danger':''}">⏳ ${r[4]}</span></td>
-                  <td><span class="badge" style="${r[6]?'color:var(--error);border-color:var(--error)':''}">${r[5]}</span></td>
-                  <td><button class="btn ghost sm">Edit</button> <button class="btn danger sm">🗑</button></td>
-                </tr>`).join('')}
-              </tbody>
-            </table>
+          <div id="vv-seller-settings-view" style="display:none">
+            <div class="h1" style="margin-bottom:20px">Seller Settings</div>
+            <div class="surface" style="padding:32px;text-align:center">
+              <div class="h2" style="margin-bottom:12px">Shop Profile</div>
+              <p class="small" style="margin-bottom:24px">Manage your shop profile, notification preferences, and payout methods.</p>
+              <div class="stack-12" style="max-width:400px;margin:0 auto;text-align:left">
+                <div class="input"><label>Shop Name</label><input class="field" value="My Garden Shop"></div>
+                <div class="input"><label>Notification Email</label><input class="field" value="seller@test.com"></div>
+                <button class="btn disabled">Save Changes (Coming Soon)</button>
+              </div>
+            </div>
           </div>
-          ${api('GET /api/products')}
         </div>
       </div>
       ${footerFull}

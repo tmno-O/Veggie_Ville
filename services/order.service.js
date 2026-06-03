@@ -1,5 +1,6 @@
 const pool        = require('../config/db');
 const { clearCart } = require('./cart.service');
+const discountService = require('./discount.service');
 
 /**
  * Place an order atomically
@@ -25,41 +26,57 @@ const checkout = async ({ buyer_id, pickup_slot_id, items }) => {
       throw new Error('Invalid pickup slot');
     }
 
-    // ── STEP 2: Verify each product ────────────────────────
-    // Check not expired AND sufficient stock
-    let total = 0;
+    // ── STEP 2: Verify each product with LOCK ──────────────
+    // Check not expired AND sufficient stock. Use FOR UPDATE to lock rows.
     const verifiedItems = [];
 
     for (const item of items) {
       const [products] = await conn.query(
-        `SELECT id, name, price, size, quantity
+        `SELECT id, name, price, size, quantity, category
          FROM products
          WHERE id = ?
          AND best_before >= CURDATE()
-         AND quantity >= ?`,
-        [item.product_id, item.quantity]
+         FOR UPDATE`,
+        [item.product_id]
       );
+
       if (products.length === 0) {
-        throw new Error(
-          `Product ${item.product_id} is expired or out of stock`
-        );
+        throw new Error(`Product ${item.product_id} not found or expired`);
       }
+
       const product = products[0];
-      total += Number(product.price) * Number(item.quantity);
-      verifiedItems.push({ ...item, product });
+
+      if (product.quantity < item.quantity) {
+        const err = new Error(`Product ${item.product_id} is out of stock`);
+        err.code = 'OUT_OF_STOCK';
+        err.productId = item.product_id;
+        throw err;
+      }
+
+      verifiedItems.push({
+        product_id: item.product_id,
+        quantity: item.quantity,
+        name: product.name,
+        category: product.category,
+        price: product.price,
+        size: product.size
+      });
     }
 
-    // ── STEP 3: Insert order ───────────────────────────────
+    // ── STEP 3: Calculate Discount ────────────────────────
+    const discountData = discountService.calculateDiscount(verifiedItems);
+
+    // ── STEP 4: Insert order ───────────────────────────────
     // Payment bypassed for demo — status = confirmed directly
     const [orderResult] = await conn.query(
       `INSERT INTO orders
          (buyer_id, pickup_slot_id, total_price, status)
        VALUES (?, ?, ?, 'confirmed')`,
-      [buyer_id, pickup_slot_id, total.toFixed(2)]
+      [buyer_id, pickup_slot_id, discountData.total]
     );
     const order_id = orderResult.insertId;
 
-    // ── STEP 4: Insert order_items + deduct stock ──────────
+    // ── STEP 5: Insert order_items + deduct stock ──────────
     for (const item of verifiedItems) {
       // Insert order item
       await conn.query(
@@ -70,28 +87,39 @@ const checkout = async ({ buyer_id, pickup_slot_id, items }) => {
           order_id,
           item.product_id,
           item.quantity,
-          item.product.price,
-          item.product.size
+          item.price,
+          item.size
         ]
       );
-      // Deduct stock from products table
-      await conn.query(
+      // Deduct stock from products table with guard
+      const [updateResult] = await conn.query(
         `UPDATE products
          SET quantity = quantity - ?
-         WHERE id = ?`,
-        [item.quantity, item.product_id]
+         WHERE id = ? AND quantity >= ?`,
+        [item.quantity, item.product_id, item.quantity]
       );
+
+      if (updateResult.affectedRows === 0) {
+        const err = new Error(`Product ${item.product_id} is out of stock`);
+        err.code = 'OUT_OF_STOCK';
+        err.productId = item.product_id;
+        throw err;
+      }
     }
 
-    // ── STEP 5: Clear buyer's cart ─────────────────────────
+    // ── STEP 6: Clear buyer's cart ─────────────────────────
     await clearCart(buyer_id, conn);
 
-    // ── STEP 6: Commit everything ──────────────────────────
+    // ── STEP 7: Commit everything ──────────────────────────
     await conn.commit();
 
     return {
       order_id,
-      total: Number(total.toFixed(2)),
+      subtotal: discountData.subtotal,
+      discount_rate: discountData.discountRate,
+      discount_amount: discountData.discountAmount,
+      discount_reason: discountData.reason,
+      total: discountData.total,
       status: 'confirmed',
       pickup_slot_id,
       item_count: items.length

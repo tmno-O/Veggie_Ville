@@ -169,4 +169,68 @@ const getMineStats = async (seller_id) => {
   };
 };
 
-module.exports = { getAll, getById, create, update, remove, getMine, getMineStats };
+/**
+ * Get personalized recommendations for a product
+ * "Users who bought X also liked Y"
+ * @param {number} product_id
+ * @param {number} limit
+ * @returns {Promise<Array>}
+ */
+const getRecommendations = async (product_id, limit = 4) => {
+  const [rows] = await pool.query(
+    `SELECT
+      p.id,
+      p.seller_id,
+      p.name,
+      p.description,
+      p.price,
+      p.quantity,
+      p.size,
+      p.category,
+      p.best_before,
+      COUNT(*) AS score
+    FROM order_items seed_item
+    JOIN orders seed_order
+      ON seed_order.id = seed_item.order_id
+    JOIN orders related_order
+      ON related_order.buyer_id = seed_order.buyer_id
+    JOIN order_items related_item
+      ON related_item.order_id = related_order.id
+    JOIN products p
+      ON p.id = related_item.product_id
+    WHERE seed_item.product_id = ?
+      AND related_item.product_id <> ?
+      AND p.best_before >= CURDATE()
+      AND p.quantity > 0
+    GROUP BY
+      p.id,
+      p.seller_id,
+      p.name,
+      p.description,
+      p.price,
+      p.quantity,
+      p.size,
+      p.category,
+      p.best_before
+    ORDER BY score DESC, p.created_at DESC
+    LIMIT ?`,
+    [product_id, product_id, limit]
+  );
+  return rows;
+};
+
+/**
+ * Get count of active products per category
+ * @returns {Promise<Array>}
+ */
+const getCategoryCounts = async () => {
+  const [rows] = await pool.query(
+    `SELECT category, COUNT(*) as count 
+     FROM products 
+     WHERE best_before >= CURDATE() AND quantity > 0
+     GROUP BY category`
+  );
+  return rows;
+};
+
+module.exports = { getAll, getById, create, update, remove, getMine, getMineStats, getRecommendations, getCategoryCounts };
