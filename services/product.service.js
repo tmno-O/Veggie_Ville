@@ -34,29 +34,16 @@ const getById = async (id) => {
 };
 
 /**
- * Get products owned by one seller, including expired or out-of-stock rows.
- * @param {number} seller_id
- * @returns {Promise<Array>}
- */
-const getBySeller = async (seller_id) => {
-  const [rows] = await pool.query(
-    'SELECT * FROM products WHERE seller_id = ? ORDER BY created_at DESC',
-    [seller_id]
-  );
-  return rows;
-};
-
-/**
  * Create a new product and return the full product row
  * @param {{ seller_id, name, description, price, quantity, size, category, best_before }} data
  * @returns {Promise<object>}
  */
-const create = async ({ seller_id, name, description, price, quantity, size, category, best_before, image_url }) => {
+const create = async ({ seller_id, name, description, price, quantity, size, category, best_before }) => {
   const [result] = await pool.query(
     `INSERT INTO products
-       (seller_id, name, description, price, quantity, size, category, best_before, image_url)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [seller_id, name, description ?? null, price, quantity, size, category ?? null, best_before, image_url ?? null]
+       (seller_id, name, description, price, quantity, size, category, best_before)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [seller_id, name, description ?? null, price, quantity, size, category ?? null, best_before]
   );
 
   const [rows] = await pool.query(
@@ -85,7 +72,7 @@ const update = async (id, seller_id, fields) => {
   }
 
   // Column names from hardcoded allowlist — safe to interpolate
-  const allowed = ['name', 'description', 'price', 'quantity', 'size', 'category', 'best_before', 'image_url'];
+  const allowed = ['name', 'description', 'price', 'quantity', 'size', 'category', 'best_before'];
   const updates = [];
   const params  = [];
 
@@ -139,4 +126,4 @@ const remove = async (id, seller_id, role) => {
   return { message: 'Product deleted successfully' };
 };
 
-module.exports = { getAll, getById, getBySeller, create, update, remove };
+module.exports = { getAll, getById, create, update, remove };

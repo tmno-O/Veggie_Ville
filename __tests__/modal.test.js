@@ -30,3 +30,11 @@ test('openModal creates backdrop and focuses body', ()=>{
   window.VVModal.closeModal();
   expect(backdrop.style.display).toBe('none');
 });
+
+test('openCartModal maps Unauthorized JSON to a friendly login message', () => {
+  window.VVModal.openCartModal('{"message":"Unauthorized"}');
+  const body = document.querySelector('.vv-modal-body');
+  expect(body.textContent).toContain('Please log in to add items.');
+  expect(body.textContent).not.toContain('Unauthorized');
+  window.VVModal.closeModal();
+});

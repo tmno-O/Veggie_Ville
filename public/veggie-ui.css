@@ -196,10 +196,18 @@
     display:flex;align-items:center;padding:0 10px;color:var(--ink-3);font-size:11px;
   }
   .nav-bar .icon{
-    width:24px;height:24px;border:1px solid var(--line);border-radius:6px;
-    display:inline-flex;align-items:center;justify-content:center;color:var(--ink-2);font-size:11px;
+    min-width:40px;min-height:40px;padding:8px;box-sizing:border-box;
+    border:1px solid transparent;border-radius:8px;cursor:pointer;
+    display:inline-flex;align-items:center;justify-content:center;color:var(--ink-2);font-size:14px;
+    transition: background-color 0.2s;
   }
-  .nav-bar .avatar{width:24px;height:24px;border-radius:50%;background:var(--line);border:1px solid var(--line-2)}
+  .nav-bar .icon:hover{background:var(--vv-stone-100);}
+  .nav-bar .avatar{
+    width:40px;height:40px;padding:8px;box-sizing:border-box;border-radius:50%;
+    background:var(--line);border:1px solid transparent;cursor:pointer;
+    transition: background-color 0.2s;
+  }
+  .nav-bar .avatar:hover{background:var(--vv-stone-200) !important;}
   .nav-bar .link{color:var(--ink);font-size:12px}
 
   .img-ph{
@@ -239,6 +247,10 @@
     padding:2px 6px;font-size:10px;color:var(--ink-2);background:#fff;
     font-family:ui-monospace,Menlo,monospace;
   }
+  .vv-page-btn{
+    min-width:40px;min-height:40px;padding:8px 12px;box-sizing:border-box;
+    display:inline-flex;align-items:center;justify-content:center;cursor:pointer;
+  }
   .tag.danger{border-color:var(--error);color:var(--error)}
   .tag.success{border-color:var(--success);color:var(--success)}
 
@@ -272,6 +284,35 @@
   .input.ok .field::after{content:"✓";margin-left:auto;color:var(--success)}
   .input .help{font-size:10px;color:var(--ink-3);font-family:ui-monospace,Menlo,monospace}
   .input textarea.field{height:64px;align-items:flex-start;padding:8px 10px}
+
+  .vv-password-wrap{
+    position:relative;
+    display:flex;
+    align-items:center;
+  }
+  .vv-password-wrap .field{
+    width:100%;
+    padding-right:44px;
+  }
+  .vv-password-toggle{
+    position:absolute;
+    right:8px;
+    width:28px;
+    height:28px;
+    border:0;
+    background:transparent;
+    color:var(--ink-2);
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    font-size:14px;
+    line-height:1;
+    border-radius:6px;
+  }
+  .vv-password-toggle:hover{
+    background:var(--vv-stone-100);
+  }
 
   .select{
     height:36px;border:1px solid var(--line);border-radius:6px;background:#fff;
@@ -317,10 +358,20 @@
 .vv-bold          { font-weight: 600; }
 .vv-sticky-top    { position: sticky; top: 0; }
 .vv-scroll-x      { display: flex; gap: 8px; overflow: auto; }
-.vv-grid-hero     { display: grid; grid-template-columns: 1fr 1fr; min-height: 600px; }
-.vv-hero-left     { padding: 64px; background: var(--panel); display: flex; flex-direction: column; justify-content: center; gap: 16px; }
-.vv-hero-right    { padding: 64px; display: flex; align-items: center; justify-content: center; }
 .vv-max-420       { width: 100%; max-width: 420px; }
+.vv-auth-viewport {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: calc(100dvh - 72px);
+}
+.page-desktop > .vv-auth-viewport {
+  flex: 1;
+  min-height: 0;
+}
 .vv-page-pad      { padding: 32px 64px; }
 .vv-page-pad-sm   { padding: 24px 64px; }
 .vv-panel-bg      { background: var(--panel); margin-top: 24px; padding: 24px 64px; }
@@ -333,12 +384,23 @@
 /* Product card */
   .pcard{
     border:1px solid var(--line);border-radius:8px;background:#fff;overflow:hidden;
-    display:flex;flex-direction:column;
+    display:grid;grid-template-rows:50% 50%;height:100%;min-height:220px;
   }
-  .pcard .body{padding:10px;display:flex;flex-direction:column;gap:6px}
+  .pcard > .img-ph{
+    aspect-ratio:unset;width:100%;height:100%;min-height:0;
+  }
+  .pcard .body{
+    padding:24px;display:flex;flex-direction:column;gap:8px;min-height:0;
+  }
   .pcard .name{font-size:12px;font-weight:600}
   .pcard .meta{display:flex;gap:6px;align-items:center}
   .pcard .price{font-size:14px}
+  .pcard .body > .row.between{
+    flex-direction:column;align-items:stretch;gap:10px;margin-top:auto;
+  }
+  .pcard .body .btn.sm{
+    width:100%;height:auto;padding:12px 40px;
+  }
   .pcard:hover{box-shadow:0 2px 8px rgba(0,0,0,.06)}
 
   /* Cat pills */
@@ -370,8 +432,28 @@
   }
   .side-panel h4{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-2);margin:8px 0 0}
   .check{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink)}
-  .check .box{width:14px;height:14px;border:1px solid var(--line-2);border-radius:3px;background:#fff}
-  .check.on .box{background:var(--primary);border-color:var(--primary)}
+  .check input[type="radio"],
+  .check input[type="checkbox"]{
+    position:absolute;
+    width:1px;
+    height:1px;
+    margin:-1px;
+    overflow:hidden;
+    clip:rect(0 0 0 0);
+    white-space:nowrap;
+    border:0;
+  }
+  .check .box{
+    display:inline-block;
+    width:14px;
+    height:14px;
+    border:1px solid var(--line-2);
+    border-radius:3px;
+    background:#fff;
+    flex:0 0 14px;
+  }
+  .check input[type="radio"] + .box{border-radius:50%}
+  .check input:checked + .box{background:var(--primary);border-color:var(--primary)}
   .slider{
     display:flex;flex-direction:column;gap:6px;
   }
@@ -566,7 +648,7 @@ body{
 
 .fab,
 .pill.active,
-.check.on .box,
+.check input:checked + .box,
 .slider .track::after,
 .progress .bar,
 .step-ind .s.on{
@@ -832,4 +914,47 @@ body{
   background: var(--vv-green-50) !important;
   color: var(--vv-green-700) !important;
   cursor: pointer;
+}
+
+/* Nav drawer (hamburger menu) */
+.vv-nav-drawer{
+  position:fixed;
+  left:0;top:0;
+  height:100%;width:280px;
+  background:#fff;
+  border-right:1px solid var(--line);
+  box-shadow:24px 0 48px var(--vv-shadow);
+  z-index:9998;
+  padding:16px;
+  display:flex;flex-direction:column;
+  transform:translateX(-100%);
+  transition:transform .28s ease;
+}
+.vv-nav-drawer.open{
+  transform:translateX(0);
+}
+.vv-nav-overlay{
+  position:fixed;
+  inset:0;
+  background:rgba(28,25,23,.42);
+  z-index:9997;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .28s ease;
+}
+.vv-nav-overlay.open{
+  opacity:1;
+  pointer-events:auto;
+}
+.vv-nav-close{
+  border:1px solid var(--vv-stone-300);
+  background:var(--vv-stone-50);
+  color:var(--vv-stone-700);
+  border-radius:6px;
+  width:28px;height:28px;
+  display:inline-flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:14px;
+}
+.vv-nav-link:hover{
+  background:var(--vv-green-50);
 }

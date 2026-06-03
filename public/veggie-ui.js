@@ -50,17 +50,19 @@
 
   // modal functions provided by public/modal.js as `window.VVModal` (openModal/closeModal)
 
-  // --- Auth helpers ---
+  // --- Auth helpers (cookie-based — no token in localStorage) ---
   function setAuthToken(token){
-    if(!token){ lsRemove('vv_token'); return; }
-    lsSet('vv_token', token);
+    // legacy: only used to clear any old localStorage token on logout
+    if(!token){ lsRemove('vv_token'); }
   }
 
   async function fetchMe(){
-    const token = lsGet('vv_token');
-    if(!token) return null;
     try{
-      const res = await fetch('/api/auth/me', { method:'GET', credentials:'include', headers: { 'Authorization': 'Bearer '+token } });
+      const res = await fetch('/api/auth/me', { method:'GET', credentials:'include' });
+      if(res.status === 401 || res.status === 403){
+        lsRemove('vv_token'); // clean up any legacy token left in storage
+        return null;
+      }
       if(!res.ok) return null;
       return await res.json();
     }catch(e){ return null; }
@@ -69,8 +71,6 @@
   async function authFetch(url, opts={}){
     try {
       opts = Object.assign({ credentials: 'include', headers: {} }, opts || {});
-      const token = lsGet('vv_token');
-      if(token){ opts.headers = Object.assign({}, opts.headers, { 'Authorization': 'Bearer '+token }); }
       return await fetch(url, opts);
     } catch(err) {
       throw new Error('Network error: ' + esc(err.message||err));
@@ -82,8 +82,7 @@
     try{
       if(typeof io === 'undefined') return;
       if(vvSocket) vvSocket.disconnect();
-      const token = lsGet('vv_token');
-      vvSocket = io({ auth: { token } });
+      vvSocket = io(); // auth handled via httpOnly cookie
       vvSocket.on('connect', ()=>{});
       vvSocket.on('connect_error', ()=>{});
       vvSocket.on('cart:update', data=>{
@@ -100,15 +99,40 @@
     }catch(e){ console.warn('Socket init failed', e); }
   }
 
-  window.VVAuth = { setToken: setAuthToken, fetchMe, authFetch, connectSocket, lsRemove };
+  async function logout(){
+    try {
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+    } catch (_) {
+      // Still clear local state when the network is unavailable.
+    }
+    setAuthToken(null);
+    lsRemove('vv_cart');
+    if(vvSocket) {
+      try { vvSocket.disconnect(); } catch (_) {}
+      vvSocket = null;
+    }
+  }
+
+  window.VVAuth = { setToken: setAuthToken, fetchMe, authFetch, connectSocket, logout, lsRemove };
   // convenience: perform login and persist token
   window.VVAuth.login = async (email, password) => {
-    const res = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
     if(!res.ok) {
-      const txt = await res.text(); throw new Error(txt||res.statusText);
+      const txt = await res.text();
+      let payload = { message: txt };
+      try { payload = JSON.parse(txt); } catch {}
+      const err = new Error(payload.message || res.statusText || 'Login failed');
+      err.code = payload.code || `HTTP_${res.status}`;
+      err.status = res.status;
+      throw err;
     }
     const data = await res.json();
-    if(data && data.token){ setAuthToken(data.token); connectSocket(); }
+    connectSocket(); // cookie is already set by the server's Set-Cookie header
     return data;
   };
 
@@ -128,7 +152,8 @@
       // revert optimistic update if any
       cartCount = Math.max(0, Number(lsGet('vv_cart', '0')||0)); renderCartBadge();
       // show focus-trapped modal for important failure
-      window.VVModal && window.VVModal.openModal ? window.VVModal.openModal(`<div style="font-weight:700;margin-bottom:8px">Failed to add to cart</div><div style="color:#333;margin-bottom:8px">${esc(err.message||err)}</div>`) : alert('Failed to add to cart: '+esc(err.message||err));
+      const msg = /Unauthorized/i.test(err.message) ? 'Please log in to add items.' : (err.message||err);
+      window.VVModal && window.VVModal.openModal ? window.VVModal.openModal(`<div style="font-weight:700;margin-bottom:8px">Failed to add to cart</div><div style="color:#333;margin-bottom:8px">${esc(msg)}</div>`) : alert('Failed to add to cart: '+esc(msg));
       console.error('Add to cart error', err);
     }
   }
@@ -244,6 +269,60 @@ document.addEventListener('click', e => {
     if (ic && (ic.textContent||'').includes('🛒')) {
       e.preventDefault();
       toggleCart();
+    }
+  });
+
+  // ---------- Nav drawer (hamburger menu) ----------
+  function createNavDrawer(){
+    let d = document.querySelector('.vv-nav-drawer');
+    if(d) return d;
+    const overlay = document.createElement('div');
+    overlay.className = 'vv-nav-overlay';
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', toggleNavDrawer);
+
+    d = document.createElement('aside');
+    d.className = 'vv-nav-drawer';
+    d.setAttribute('aria-hidden','true');
+    d.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><b style="font-size:16px;color:var(--vv-green-900)">Veggie Ville</b><button class="vv-nav-close" aria-label="Close menu">✕</button></div>
+      <nav style="display:flex;flex-direction:column;gap:4px">
+        <a class="vv-nav-link" data-route="/" style="padding:10px 8px;border-radius:6px;text-decoration:none;font-size:13px;color:var(--ink)">🏠 Home</a>
+        <a class="vv-nav-link" data-route="/browse" style="padding:10px 8px;border-radius:6px;text-decoration:none;font-size:13px;color:var(--ink)">🥬 Browse Products</a>
+        <a class="vv-nav-link" data-route="/cart" style="padding:10px 8px;border-radius:6px;text-decoration:none;font-size:13px;color:var(--ink)">🛒 Cart</a>
+        <a class="vv-nav-link" data-route="/orders" style="padding:10px 8px;border-radius:6px;text-decoration:none;font-size:13px;color:var(--ink)">📦 My Orders</a>
+        <a class="vv-nav-link" data-route="/seller" style="padding:10px 8px;border-radius:6px;text-decoration:none;font-size:13px;color:var(--ink)">🌱 Seller Dashboard</a>
+        <a class="vv-nav-link" data-route="/login" style="padding:10px 8px;border-radius:6px;text-decoration:none;font-size:13px;color:var(--ink)">🔑 Login</a>
+      </nav>`;
+    document.body.appendChild(d);
+    d.querySelector('.vv-nav-close').addEventListener('click', toggleNavDrawer);
+    d.querySelectorAll('.vv-nav-link').forEach(link => {
+      link.addEventListener('click', e => {
+        e.preventDefault();
+        toggleNavDrawer();
+        if(window.VVNavigate) window.VVNavigate(link.dataset.route);
+      });
+    });
+    return d;
+  }
+
+  function toggleNavDrawer(){
+    const d = createNavDrawer();
+    const overlay = document.querySelector('.vv-nav-overlay');
+    const open = d.classList.contains('open');
+    if(open){
+      d.classList.remove('open'); d.setAttribute('aria-hidden','true');
+      if(overlay) overlay.classList.remove('open');
+    } else {
+      d.classList.add('open'); d.setAttribute('aria-hidden','false');
+      if(overlay) overlay.classList.add('open');
+    }
+  }
+
+  document.addEventListener('click', e => {
+    const hamburger = e.target.closest('.nav-bar .icon[title="hamburger"]');
+    if(hamburger){
+      e.preventDefault();
+      toggleNavDrawer();
     }
   });
   // try fetch cart on load

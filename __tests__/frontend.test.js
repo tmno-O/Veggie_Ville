@@ -55,6 +55,7 @@ async function loadApp({ route = '/', role = null, fetchImpl = null } = {}) {
 
   eval(read('public/components.js'));
   eval(read('public/modal.js'));
+  eval(read('public/error-banner.js'));
   eval(read('public/veggie-ui.js'));
   eval(read('public/router.js'));
   await new Promise(resolve => setTimeout(resolve, 40));
@@ -70,9 +71,28 @@ test('protected routes render an auth guard for anonymous users', async () => {
   expect(document.body.textContent).toContain('Login required');
 });
 
+test('how it works nav routes to the homepage section', async () => {
+  Element.prototype.scrollIntoView = jest.fn();
+  await loadApp({ route: '/products/111' });
+  document.querySelector('[data-route="/#how-it-works"]').click();
+  await new Promise(resolve => setTimeout(resolve, 40));
+  expect(window.location.pathname).toBe('/');
+  expect(window.location.hash).toBe('#how-it-works');
+  expect(document.getElementById('how-it-works')).not.toBeNull();
+  expect(Element.prototype.scrollIntoView).toHaveBeenCalled();
+});
+
+test('anonymous desktop nav hides the profile avatar', async () => {
+  await loadApp({ route: '/' });
+  const desktopAvatar = document.querySelector('.page-desktop .nav-bar .avatar');
+  expect(desktopAvatar.hidden).toBe(true);
+  expect(desktopAvatar.style.display).toBe('none');
+  expect(document.querySelector('.page-desktop .vv-account-action').textContent).toBe('Login');
+});
+
 test('product and cart rendering do not create tags from unsafe names', async () => {
   await loadApp({ route: '/', role: 'buyer' });
-  expect(document.querySelector('.pcard .name').textContent).toBe('Tomato <safe>');
+  expect(document.querySelector('.pcard .vvc-name').textContent).toBe('Tomato <safe>');
   expect(document.querySelectorAll('safe')).toHaveLength(0);
 
   window.VVAuth.authFetch = jest.fn(async (url) => {
@@ -117,4 +137,76 @@ test('admin stats update desktop and mobile layouts', async () => {
   await loadApp({ route: '/admin', role: 'admin' });
   expect([...document.querySelectorAll('.page-phone .stat .v')].map(el => el.textContent).slice(0, 4)).toEqual(['9', '2', '1', '1']);
   expect([...document.querySelectorAll('.page-desktop .stat .v')].map(el => el.textContent).slice(0, 4)).toEqual(['9', '2', '1', '1']);
+});
+
+// ─── Auth validation UI tests ───────────────────────────────────────────────
+
+function getModalText() {
+  return document.querySelector('.vv-modal-body')?.textContent || '';
+}
+
+async function submitLoginForm(overrides = {}) {
+  const form = document.querySelector('.vv-login-form');
+  const fields = { email: 'seller@test.com', password: 'password123', ...overrides };
+  form.querySelector('[name="email"]').value  = fields.email;
+  form.querySelector('[name="password"]').value = fields.password;
+  form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+  await new Promise(r => setTimeout(r, 20));
+}
+
+async function submitRegisterForm(overrides = {}) {
+  const form = document.querySelector('.vv-register-form');
+  const fields = {
+    name: 'Test User', email: 'new@test.com',
+    password: 'password123', confirm_password: 'password123', role: 'buyer',
+    ...overrides
+  };
+  Object.entries(fields).forEach(([k, v]) => {
+    const el = form.querySelector(`[name="${k}"]`);
+    if (el) el.value = v;
+  });
+  form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+  await new Promise(r => setTimeout(r, 20));
+}
+
+test('login: empty email shows AUTH_EMAIL_REQUIRED', async () => {
+  await loadApp({ route: '/login' });
+  await submitLoginForm({ email: '' });
+  expect(getModalText()).toContain('AUTH_EMAIL_REQUIRED');
+});
+
+test('login: invalid email format shows AUTH_EMAIL_INVALID', async () => {
+  await loadApp({ route: '/login' });
+  await submitLoginForm({ email: 'not-an-email' });
+  expect(getModalText()).toContain('AUTH_EMAIL_INVALID');
+});
+
+test('login: empty password shows AUTH_PASSWORD_REQUIRED', async () => {
+  await loadApp({ route: '/login' });
+  await submitLoginForm({ password: '' });
+  expect(getModalText()).toContain('AUTH_PASSWORD_REQUIRED');
+});
+
+test('login: password shorter than 8 chars shows AUTH_PASSWORD_TOO_SHORT', async () => {
+  await loadApp({ route: '/login' });
+  await submitLoginForm({ password: 'short' });
+  expect(getModalText()).toContain('AUTH_PASSWORD_TOO_SHORT');
+});
+
+test('register: password mismatch shows AUTH_PASSWORD_MISMATCH', async () => {
+  await loadApp({ route: '/register' });
+  await submitRegisterForm({ password: 'password123', confirm_password: 'different1' });
+  expect(getModalText()).toContain('AUTH_PASSWORD_MISMATCH');
+});
+
+test('register: short password shows AUTH_PASSWORD_TOO_SHORT', async () => {
+  await loadApp({ route: '/register' });
+  await submitRegisterForm({ password: 'short', confirm_password: 'short' });
+  expect(getModalText()).toContain('AUTH_PASSWORD_TOO_SHORT');
+});
+
+test('register: empty name shows AUTH_NAME_REQUIRED', async () => {
+  await loadApp({ route: '/register' });
+  await submitRegisterForm({ name: '' });
+  expect(getModalText()).toContain('AUTH_NAME_REQUIRED');
 });

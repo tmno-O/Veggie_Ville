@@ -47,15 +47,27 @@ const pageRoles = {
 const authFetch = (url, opts={}) => window.VVAuth.authFetch(url, opts);
 const getMe = () => window.VVAuth.fetchMe();
 
+function parseApiPayload(text) {
+  try { return JSON.parse(text); } catch { return { message: text }; }
+}
+
 function parseJsonError(errText) {
-  try { return JSON.parse(errText).message || errText; } catch { return errText; }
+  return parseApiPayload(errText).message || errText;
+}
+
+function createApiError(res, text) {
+  const payload = parseApiPayload(text);
+  const err = new Error(payload.message || res.statusText || 'Request failed');
+  err.code = payload.code || `HTTP_${res.status}`;
+  err.status = res.status;
+  return err;
 }
 
 async function request(url, opts={}) {
   const res = await authFetch(url, opts);
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(parseJsonError(text) || res.statusText);
+    throw createApiError(res, text);
   }
   if (res.status === 204) return null;
   return res.json();
@@ -107,6 +119,7 @@ async function renderPage(pageId, params={}) {
   await bindAccountState();
   document.querySelectorAll('.pill').forEach(pill => { pill.tabIndex = 0; });
   if (window.VVBadge) window.VVBadge();
+  scrollToCurrentHash();
 }
 
 function navigate(path, replace=false) {
@@ -116,6 +129,13 @@ function navigate(path, replace=false) {
   renderPage(route.pageId, route.params);
 }
 window.VVNavigate = navigate;
+
+function scrollToCurrentHash() {
+  const id = decodeURIComponent(window.location.hash || '').replace(/^#/, '');
+  if (!id) return;
+  const target = document.getElementById(id);
+  if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
 
 document.addEventListener('click', (event) => {
   const explicit = event.target.closest('[data-route]');
@@ -142,6 +162,7 @@ document.addEventListener('click', (event) => {
     [/^vv|veggie ville|home$/, '/'],
     [/browse|browse products/, '/browse'],
     [/sell|become a seller|seller dashboard/, '/seller'],
+    [/how it works/, '/#how-it-works'],
     [/create account|register/, '/register'],
     [/login/, '/login'],
     [/cart|checkout|proceed to checkout/, '/cart'],
@@ -191,7 +212,7 @@ async function bindProducts(pageId, filters={}, page=1) {
 
     const cards = products.map(p => window.productCard({
       id: p.id, name: p.name, size: p.size,
-      price: money(p.price), exp: dateOnly(p.best_before), category: p.category, image_url: p.image_url
+      price: money(p.price), exp: dateOnly(p.best_before), category: p.category
     })).join('') || '<div class="surface small">No products available.</div>';
 
     if (pageId === 'p1') {
@@ -210,7 +231,7 @@ async function bindProducts(pageId, filters={}, page=1) {
 }
 
 function renderPagination(totalPages, currentPage, filters) {
-  const paginationRow = document.querySelector('.page-desktop .grid-3 + .row, .page-desktop [style*="justify-content:center"]');
+  const paginationRow = document.querySelector('.page-desktop .vv-pagination-row, .page-desktop .grid-3 + .row');
   if (!paginationRow) return;
 
   const pages = [];
@@ -218,13 +239,13 @@ function renderPagination(totalPages, currentPage, filters) {
 
   paginationRow.innerHTML = pages.map(p => {
     const isActive = p === currentPage;
-    return `<span class="tag" style="${isActive ? 'background:#111;color:#fff;' : ''}cursor:pointer" data-page="${p}">${p}</span>`;
+    return `<span class="tag vv-page-btn" style="${isActive ? 'background:#111;color:#fff;' : ''}" data-page="${p}">${p}</span>`;
   }).join('');
 
   paginationRow.insertAdjacentHTML('afterbegin',
-    `<span class="tag" style="cursor:pointer" data-page="${Math.max(1, currentPage - 1)}">‹</span>`);
+    `<span class="tag vv-page-btn" data-page="${Math.max(1, currentPage - 1)}">&lsaquo;</span>`);
   paginationRow.insertAdjacentHTML('beforeend',
-    `<span class="tag" style="cursor:pointer" data-page="${Math.min(totalPages, currentPage + 1)}">›</span>`);
+    `<span class="tag vv-page-btn" data-page="${Math.min(totalPages, currentPage + 1)}">&rsaquo;</span>`);
 
   paginationRow.querySelectorAll('[data-page]').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -247,39 +268,74 @@ function bindCatalogFilters(filters={}) {
     </form>`;
   const mobileHost = document.querySelector('.page-phone .surface.muted');
   const desktopHost = document.querySelector('.page-desktop [style*="flex:1;padding:24px"]');
-  if (mobileHost) mobileHost.innerHTML = filterHtml;
-  if (desktopHost && !desktopHost.querySelector('.vv-filter-form')) desktopHost.insertAdjacentHTML('afterbegin', filterHtml);
-  document.querySelectorAll('.vv-filter-form').forEach(form => form.addEventListener('submit', async e => {
-    e.preventDefault();
-    const next = Object.fromEntries([...new FormData(form)].filter(([,v]) => v !== ''));
-    await bindProducts('p2', next);
-  }));
+  const applyFormFilters = async (form) => {
+    const next = Object.fromEntries([...new FormData(form)].filter(([, v]) => v !== ''));
+    await bindProducts('p2', next, 1);
+  };
+
+  if (mobileHost) {
+    mobileHost.innerHTML = filterHtml;
+    const form = mobileHost.querySelector('.vv-filter-form');
+    if (form) {
+      form.addEventListener('submit', async e => { e.preventDefault(); await applyFormFilters(form); });
+      form.querySelectorAll('input, select').forEach(el => el.addEventListener('change', () => applyFormFilters(form)));
+    }
+  }
+  if (desktopHost && !desktopHost.querySelector('.vv-filter-form')) {
+    desktopHost.insertAdjacentHTML('afterbegin', filterHtml);
+    const form = desktopHost.querySelector('.vv-filter-form');
+    if (form && !form.dataset.bound) {
+      form.dataset.bound = 'true';
+      form.addEventListener('submit', async e => { e.preventDefault(); await applyFormFilters(form); });
+      form.querySelectorAll('input, select').forEach(el => el.addEventListener('change', () => applyFormFilters(form)));
+    }
+  }
 
   const sidePanel = document.querySelector('.page-desktop .side-panel');
-  if (sidePanel && !sidePanel.dataset.bound) {
+  if (sidePanel && sidePanel.querySelector('.vv-filter-input') && !sidePanel.dataset.bound) {
     sidePanel.dataset.bound = 'true';
-    sidePanel.querySelectorAll('.check').forEach(check => { check.style.cursor = 'pointer'; });
-    sidePanel.addEventListener('click', async (e) => {
-      const check = e.target.closest('.check');
-      if (!check) return;
-      const isSize = !!e.target.closest('.side-panel .row');
-      if (!isSize) {
-        sidePanel.querySelectorAll('.check').forEach(c => {
-          if (!c.closest('.row')) c.classList.remove('on');
-        });
-        check.classList.add('on');
-        const cat = check.textContent.trim();
-        await bindProducts('p2', cat.toLowerCase() === 'all' ? {} : { category: cat }, 1);
-      } else {
+    const applySideFilters = async () => {
+      const next = {};
+      const cat = sidePanel.querySelector('input[name="vv-category"]:checked');
+      const size = sidePanel.querySelector('input[name="vv-size"]:checked');
+      const min = sidePanel.querySelector('input[name="minPrice"]');
+      const max = sidePanel.querySelector('input[name="maxPrice"]');
+      const exp = sidePanel.querySelector('input[name="vv-exp"]:checked');
+      if (cat && cat.value) next.category = cat.value;
+      if (size && size.value) next.size = size.value;
+      if (min && Number(min.value) > 0) next.minPrice = min.value;
+      if (max && Number(max.value) < 500) next.maxPrice = max.value;
+      if (exp && exp.value) next.expDanger = exp.value;
+      const minLabel = sidePanel.querySelector('.vv-min-price');
+      const maxLabel = sidePanel.querySelector('.vv-max-price');
+      if (minLabel) minLabel.textContent = min ? min.value : '0';
+      if (maxLabel) maxLabel.textContent = max ? max.value : '500';
+      await bindProducts('p2', next, 1);
+    };
+    sidePanel.addEventListener('change', async (e) => {
+      if (!e.target.matches('.vv-filter-input')) return;
+      if (e.target.name === 'vv-category') {
+        sidePanel.querySelectorAll('.check').forEach(c => { if (!c.closest('.row')) c.classList.remove('on'); });
+        e.target.closest('.check')?.classList.add('on');
+      }
+      if (e.target.name === 'vv-size') {
         sidePanel.querySelectorAll('.row .check').forEach(c => c.classList.remove('on'));
-        check.classList.add('on');
-        const size = check.textContent.trim();
-        const activeCat = Array.from(sidePanel.querySelectorAll('.check.on'))
-          .find(c => !c.closest('.row'))?.textContent.trim() || 'All';
-        const next = {};
-        if (activeCat.toLowerCase() !== 'all') next.category = activeCat;
-        if (['S','M','L','XL'].includes(size)) next.size = size;
-        await bindProducts('p2', next, 1);
+        e.target.closest('.check')?.classList.add('on');
+      }
+      if (e.target.name === 'vv-exp') {
+        if (e.target.checked) e.target.closest('.check')?.classList.add('on');
+        else e.target.closest('.check')?.classList.remove('on');
+      }
+      await applySideFilters();
+    });
+    sidePanel.addEventListener('input', (e) => {
+      if (e.target.type === 'range') {
+        const min = sidePanel.querySelector('input[name="minPrice"]');
+        const max = sidePanel.querySelector('input[name="maxPrice"]');
+        const minLabel = sidePanel.querySelector('.vv-min-price');
+        const maxLabel = sidePanel.querySelector('.vv-max-price');
+        if (minLabel) minLabel.textContent = min ? min.value : '0';
+        if (maxLabel) maxLabel.textContent = max ? max.value : '500';
       }
     });
   }
@@ -291,64 +347,168 @@ window.VVLoadProducts = async (filters={}) => {
 };
 
 async function bindProductDetail(productId) {
-  if (!productId) return;
+  const id = productId || pageRoute(window.location.pathname).params.productId;
+  if (!id) return;
   try {
-    const p = await request(`/api/products/${encodeURIComponent(productId)}`);
+    const p = await request(`/api/products/${encodeURIComponent(id)}`);
     document.querySelectorAll('.page-phone, .page-desktop').forEach(container => {
-      const img = container.querySelector('.img-ph');
-      const title = container.querySelector('.h1');
-      const price = container.querySelector('.price');
-      if (img) img.textContent = '';
-      if (title) title.textContent = p.name;
+      const title = container.querySelector('.vv-product-title');
+      const price = container.querySelector('.vv-product-price');
+      const img = container.querySelector('.vv-product-hero');
+      const desc = container.querySelector('.vv-product-desc');
+      if (title) title.textContent = p.name || '';
       if (price) price.innerHTML = `${money(p.price)} <span class="small">/ item</span>`;
-      const tag = container.querySelector('.tag');
-      if (tag) tag.textContent = `Best before ${dateOnly(p.best_before)}`;
+      if (img) {
+        img.alt = p.name || '';
+        if (p.image_url) img.src = p.image_url;
+        else img.removeAttribute('src');
+      }
+      if (desc) desc.textContent = p.description || 'No description provided.';
+      const size = container.querySelector('.vv-product-size');
+      if (size) size.textContent = p.size || '';
+      const expiry = container.querySelector('.vv-product-expiry');
+      if (expiry) expiry.textContent = `⏳ Best before ${dateOnly(p.best_before)}`;
+      const stock = container.querySelector('.vv-product-stock');
+      if (stock) stock.textContent = `Stock: ${p.quantity ?? 0}`;
+      const sellerName = container.querySelector('.vv-seller-name');
+      if (sellerName) sellerName.textContent = p.seller_name;
+      const sellerMeta = container.querySelector('.vv-seller-meta');
+      if (sellerMeta) sellerMeta.textContent = `★ ${p.rating} · ${p.review_count} reviews`;
       const add = Array.from(container.querySelectorAll('.btn')).find(btn => /add/i.test(btn.textContent || ''));
       if (add) {
         add.dataset.productId = p.id;
         add.textContent = 'Add to Cart';
       }
     });
+    document.title = `Veggie Ville - ${p.name || 'Product Detail'}`;
+    const allProducts = await request('/api/products');
+    const more = (Array.isArray(allProducts) ? allProducts : (allProducts.items || []))
+      .filter(r => r.seller_id === p.seller_id && r.id !== p.id)
+      .slice(0, 4);
+    document.querySelectorAll('.page-phone .vv-scroll-x').forEach(el => {
+      el.innerHTML = more.map(r => `<div style="min-width:140px">${window.productCard({
+        id: r.id, name: r.name, size: r.size,
+        price: money(r.price), exp: dateOnly(r.best_before), category: r.category, addBtn: false
+      })}</div>`).join('');
+    });
+    document.querySelectorAll('.page-desktop .grid-4').forEach(el => {
+      el.innerHTML = more.map(r => window.productCard({
+        id: r.id, name: r.name, size: r.size,
+        price: money(r.price), exp: dateOnly(r.best_before), category: r.category
+      })).join('');
+    });
   } catch (err) {
     showInlineError('Unable to load product: ' + err.message);
   }
 }
 
+const _AUTH_EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function validateLoginFields(data) {
+  const email    = (data.email    || '').trim();
+  const password =  data.password || '';
+  if (!email)                         return { code: 'AUTH_EMAIL_REQUIRED',     message: 'Please enter your email address.' };
+  if (!_AUTH_EMAIL_RE.test(email))    return { code: 'AUTH_EMAIL_INVALID',      message: 'Please enter a valid email address.' };
+  if (!password)                      return { code: 'AUTH_PASSWORD_REQUIRED',  message: 'Please enter your password.' };
+  if (password.length < 8)            return { code: 'AUTH_PASSWORD_TOO_SHORT', message: 'Password must be at least 8 characters.' };
+  return null;
+}
+
+function validateRegisterFields(data) {
+  const name     = (data.name     || '').trim();
+  const email    = (data.email    || '').trim();
+  const password =  data.password || '';
+  const role     =  data.role     || '';
+  if (!name)                              return { code: 'AUTH_NAME_REQUIRED',     message: 'Please enter your full name.' };
+  if (!email)                             return { code: 'AUTH_EMAIL_REQUIRED',    message: 'Please enter your email address.' };
+  if (!_AUTH_EMAIL_RE.test(email))        return { code: 'AUTH_EMAIL_INVALID',     message: 'Please enter a valid email address.' };
+  if (!password)                          return { code: 'AUTH_PASSWORD_REQUIRED', message: 'Please enter a password.' };
+  if (password.length < 8)               return { code: 'AUTH_PASSWORD_TOO_SHORT', message: 'Password must be at least 8 characters.' };
+  if (role && !['buyer','seller'].includes(role)) return { code: 'AUTH_ROLE_INVALID', message: 'Please choose Buyer or Seller.' };
+  return null;
+}
+
+function bindPasswordToggles(root=document) {
+  root.querySelectorAll('[data-password-toggle]').forEach(btn => {
+    if (btn.dataset.bound) return;
+    btn.dataset.bound = 'true';
+    btn.addEventListener('click', () => {
+      const input = document.getElementById(btn.dataset.passwordToggle);
+      if (!input) return;
+      const showing = input.type === 'text';
+      input.type = showing ? 'password' : 'text';
+      btn.textContent = showing ? '👁' : '🙈';
+      btn.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
+    });
+  });
+}
+
+function setSubmitState(form, isSubmitting) {
+  const submit = form.querySelector('[type="submit"]');
+  if (!submit) return;
+  submit.disabled = isSubmitting;
+  if (!submit.dataset.originalText) submit.dataset.originalText = submit.textContent;
+  submit.textContent = isSubmitting ? 'Please wait...' : submit.dataset.originalText;
+}
+
 function bindLogin() {
-  ['mobile', 'desktop'].forEach(layout => {
-    const btn = document.getElementById(`btn-submit-login-${layout}`);
-    if (!btn) return;
-    btn.addEventListener('click', async (e) => {
+  bindPasswordToggles();
+  document.querySelectorAll('.vv-login-form').forEach(form => {
+    if (form.dataset.bound) return;
+    form.dataset.bound = 'true';
+    form.addEventListener('submit', async e => {
       e.preventDefault();
+      const data = Object.fromEntries(new FormData(form));
+      const vErr = validateLoginFields(data);
+      if (vErr) { showModalApiError('Login failed', vErr); return; }
+      setSubmitState(form, true);
       try {
-        await window.VVAuth.login(
-          document.getElementById(`login-email-${layout}`).value,
-          document.getElementById(`login-pass-${layout}`).value
-        );
+        await window.VVAuth.login(data.email, data.password);
         navigate('/');
       } catch (err) {
-        showModalError('Login failed', err.message);
+        showModalApiError('Login failed', err);
+      } finally {
+        setSubmitState(form, false);
       }
     });
   });
 }
 
 function bindRegister() {
-  document.querySelectorAll('.page-phone .surface, .page-desktop .surface').forEach((el, idx) => {
-    el.innerHTML = `
-      <div class="h1">Create account</div>
-      <form class="vv-register-form stack-12" data-layout="${idx}">
-        <div class="input"><label>Full name *</label><input class="field" name="name" required></div>
-        <div class="input"><label>Email *</label><input type="email" class="field" name="email" required></div>
-        <div class="input"><label>Password *</label><input type="password" class="field" name="password" minlength="8" required></div>
-        <div class="input"><label>I am a *</label><select class="field" name="role"><option value="buyer">Buyer</option><option value="seller">Seller</option></select></div>
-        <button class="btn full" type="submit">Create account</button>
-      </form>`;
-  });
+  bindPasswordToggles();
   document.querySelectorAll('.vv-register-form').forEach(form => {
+    if (form.dataset.bound) return;
+    form.dataset.bound = 'true';
+    const password = form.querySelector('[name="password"]');
+    const confirm = form.querySelector('[name="confirm_password"]');
+    const help = form.querySelector('.vv-confirm-help');
+
+    const validateMatch = () => {
+      if (!password || !confirm) return true;
+      const matches = !confirm.value || password.value === confirm.value;
+      confirm.setCustomValidity(matches ? '' : 'Passwords do not match');
+      if (help) help.textContent = matches ? '' : 'Passwords do not match. Error code: AUTH_PASSWORD_MISMATCH';
+      confirm.closest('.input')?.classList.toggle('error', !matches);
+      return matches;
+    };
+
+    password?.addEventListener('input', validateMatch);
+    confirm?.addEventListener('input', validateMatch);
+
     form.addEventListener('submit', async e => {
       e.preventDefault();
+      if (!validateMatch()) {
+        showModalApiError('Registration failed', {
+          message: 'Passwords do not match.',
+          code: 'AUTH_PASSWORD_MISMATCH'
+        });
+        return;
+      }
       const data = Object.fromEntries(new FormData(form));
+      delete data.confirm_password;
+      const vErr = validateRegisterFields(data);
+      if (vErr) { showModalApiError('Registration failed', vErr); return; }
+      setSubmitState(form, true);
       try {
         await request('/api/auth/register', {
           method: 'POST',
@@ -358,7 +518,9 @@ function bindRegister() {
         await window.VVAuth.login(data.email, data.password);
         navigate('/');
       } catch (err) {
-        showModalError('Registration failed', err.message);
+        showModalApiError('Registration failed', err);
+      } finally {
+        setSubmitState(form, false);
       }
     });
   });
@@ -505,10 +667,12 @@ async function bindOrders(orderId=null) {
 }
 
 async function bindSellerDashboard() {
+  const containers = document.querySelectorAll('.page-phone .stack-12, .page-desktop tbody');
+  containers.forEach(el => { el.innerHTML = '<div class="surface small">Loading…</div>'; });
   try {
     const mine = await request('/api/products/mine');
     const cards = mine.map(p => window.productCard({ id:p.id, name:p.name, size:p.size, price:money(p.price), exp:dateOnly(p.best_before), category:p.category })).join('') || '<div class="surface small">No seller listings found.</div>';
-    document.querySelectorAll('.page-phone .stack-12, .page-desktop tbody').forEach(el => {
+    containers.forEach(el => {
       if (el.tagName === 'TBODY') {
         el.innerHTML = mine.map(p => `<tr><td><div class="img-ph" style="width:48px;height:48px">IMG</div></td><td>${esc(p.name)}</td><td><span class="badge">${esc(p.size)}</span></td><td>${money(p.price)}</td><td>${p.quantity}</td><td>${esc(dateOnly(p.best_before))}</td><td><span class="badge">${new Date(p.best_before) < new Date() ? 'Expired' : 'Active'}</span></td><td><button class="btn ghost sm" data-route="/listing/${p.id}">Edit</button> <button class="btn danger sm vv-delete-product" data-product-id="${p.id}">Delete</button></td></tr>`).join('');
       } else {
@@ -516,8 +680,55 @@ async function bindSellerDashboard() {
       }
     });
   } catch (err) {
+    containers.forEach(el => { el.innerHTML = '<div class="surface small">Unable to load listings.</div>'; });
     showInlineError('Unable to load seller dashboard: ' + err.message);
+    return;
   }
+
+  // Bind tab switching (only bind once per page render)
+  document.querySelectorAll('.page-phone .tabs .t, .page-desktop .tabs .t').forEach(tab => {
+    if (tab.dataset.tabBound) return;
+    tab.dataset.tabBound = 'true';
+    tab.addEventListener('click', async () => {
+      tab.closest('.tabs').querySelectorAll('.t').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+
+      const isOrders = /orders received/i.test(tab.textContent);
+      if (!isOrders) {
+        await bindSellerDashboard();
+        return;
+      }
+
+      const els = document.querySelectorAll('.page-phone .stack-12, .page-desktop tbody');
+      els.forEach(el => { el.innerHTML = '<div class="surface small">Loading…</div>'; });
+      try {
+        const received = await request('/api/orders/received');
+        const mobileHtml = received.length
+          ? received.map(o => `
+              <div class="surface row between">
+                <div>
+                  <div class="mono small">ORD-${o.id}</div>
+                  <div class="small">${new Date(o.created_at).toLocaleString()} · ${o.item_count} item(s)</div>
+                </div>
+                <div style="text-align:right">
+                  <div class="mono">${money(o.total_price)}</div>
+                  <span class="badge">${esc(o.status)}</span>
+                </div>
+              </div>`).join('')
+          : '<div class="surface small">No orders received yet.</div>';
+        els.forEach(el => {
+          if (el.tagName === 'TBODY') {
+            el.innerHTML = received.map(o => `<tr><td class="mono">ORD-${o.id}</td><td>${new Date(o.created_at).toLocaleDateString()}</td><td>${o.item_count}</td><td class="mono">${money(o.total_price)}</td><td><span class="badge">${esc(o.status)}</span></td></tr>`).join('');
+          } else {
+            el.innerHTML = mobileHtml;
+          }
+        });
+      } catch (err) {
+        els.forEach(el => { el.innerHTML = '<div class="surface small">Unable to load received orders.</div>'; });
+        showInlineError('Unable to load received orders: ' + err.message);
+      }
+    });
+  });
 }
 
 async function bindListingForm(productId=null) {
@@ -533,60 +744,17 @@ async function bindListingForm(productId=null) {
       <div class="grid-2"><div class="input"><label>Price *</label><input class="field" type="number" min="0.01" step="0.01" name="price" value="${esc(product?.price || '')}" required></div><div class="input"><label>Quantity *</label><input class="field" type="number" min="0" name="quantity" value="${esc(product?.quantity || '')}" required></div></div>
       <div class="grid-2"><div class="input"><label>Size *</label><select class="field" name="size">${['S','M','L','XL'].map(s=>`<option ${product?.size===s || (!product && s==='M') ? 'selected' : ''}>${s}</option>`).join('')}</select></div><div class="input"><label>Category</label><select class="field" name="category">${['Vegetable','Fruit','Herb','Honey','Egg'].map(c=>`<option ${product?.category===c ? 'selected' : ''}>${c}</option>`).join('')}</select></div></div>
       <div class="input"><label>Best before *</label><input class="field" type="date" name="best_before" value="${esc(dateOnly(product?.best_before || ''))}" required></div>
-      <div class="input">
-        <label>Photo</label>
-        <input type="file" class="vv-photo-input" accept="image/*" style="display:none">
-        <div class="vv-upload-zone img-ph" style="aspect-ratio:4/3;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;border:2px dashed var(--line);border-radius:8px;transition:border-color .2s">
-          <span style="font-size:24px">📷</span>
-          <span class="small">Drag a file here or click to upload</span>
-        </div>
-      </div>
       <button class="btn full" type="submit">Save listing</button>
     </form>`;
   document.querySelectorAll('.page-phone .stack-12, .page-desktop .stack-12').forEach((el, idx) => { if (idx < 2) el.innerHTML = formHtml; });
-
   document.querySelectorAll('.vv-listing-form').forEach(form => {
-    const zone = form.querySelector('.vv-upload-zone');
-    const input = form.querySelector('.vv-photo-input');
-
-    zone.addEventListener('click', () => input.click());
-
-    input.addEventListener('change', () => {
-      const file = input.files[0];
-      if (file) showPreview(zone, file);
-    });
-
-    zone.addEventListener('dragover', e => {
-      e.preventDefault();
-      zone.style.borderColor = '#111';
-    });
-    zone.addEventListener('dragleave', () => {
-      zone.style.borderColor = '';
-    });
-    zone.addEventListener('drop', e => {
-      e.preventDefault();
-      zone.style.borderColor = '';
-      const file = e.dataTransfer.files[0];
-      if (file && file.type.startsWith('image/')) showPreview(zone, file);
-    });
-
     form.addEventListener('submit', async e => {
       e.preventDefault();
       try {
-        const data = Object.fromEntries(new FormData(form));
-        const file = input.files[0];
-        if (file) {
-          const fd = new FormData();
-          fd.append('image', file);
-          const uploadRes = await authFetch('/api/upload', { method: 'POST', body: fd });
-          if (!uploadRes.ok) throw new Error('Image upload failed');
-          const { url } = await uploadRes.json();
-          data.image_url = url;
-        }
         await request(productId ? `/api/products/${encodeURIComponent(productId)}` : '/api/products', {
           method: productId ? 'PUT' : 'POST',
           headers:{'Content-Type':'application/json'},
-          body: JSON.stringify(data)
+          body: JSON.stringify(Object.fromEntries(new FormData(form)))
         });
         navigate('/seller');
       } catch (err) {
@@ -594,14 +762,6 @@ async function bindListingForm(productId=null) {
       }
     });
   });
-
-  function showPreview(zone, file) {
-    const reader = new FileReader();
-    reader.onload = e => {
-      zone.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:6px">`;
-    };
-    reader.readAsDataURL(file);
-  }
 }
 
 async function bindAdminDashboard() {
@@ -743,14 +903,38 @@ document.addEventListener('change', async e => {
 async function bindAccountState() {
   const me = await getMe();
   document.querySelectorAll('.nav-bar').forEach(nav => {
-    if (nav.querySelector('.vv-account-action')) return;
+    const avatar = nav.querySelector('.avatar');
+    if (avatar) {
+      if (me) {
+        const label = me.name || me.email || me.role || 'VV';
+        const initials = String(label)
+          .trim()
+          .split(/\s+/)
+          .map(part => part[0])
+          .join('')
+          .slice(0, 2)
+          .toUpperCase() || 'VV';
+        avatar.hidden = false;
+        avatar.style.display = 'flex';
+        avatar.textContent = initials;
+      } else {
+        avatar.hidden = true;
+        avatar.style.display = 'none';
+        avatar.textContent = '';
+      }
+    }
+
+    const existing = nav.querySelector('.vv-account-action');
+    if (existing) {
+      existing.textContent = me ? `Logout (${me.role})` : 'Login';
+      return;
+    }
     const btn = document.createElement('button');
     btn.className = 'btn ghost sm vv-account-action';
     btn.textContent = me ? `Logout (${me.role})` : 'Login';
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
       if (me) {
-        window.VVAuth.setToken(null);
-        window.VVAuth.lsRemove('vv_cart');
+        await window.VVAuth.logout();
         navigate('/');
       } else {
         navigate('/login');
@@ -761,8 +945,7 @@ async function bindAccountState() {
 }
 
 function showInlineError(message) {
-  const host = contentRoot.querySelector('.page-content') || contentRoot;
-  host.insertAdjacentHTML('afterbegin', `<div class="callout error" style="margin:12px"><span class="pin">!</span><div>${esc(message)}</div></div>`);
+  window.VVErrorBanner.show(message);
 }
 
 function showModalError(title, message) {
@@ -770,6 +953,20 @@ function showModalError(title, message) {
     window.VVModal.openModal(`<div style="font-weight:700;margin-bottom:8px">${esc(title)}</div><div>${esc(message)}</div>`);
   } else {
     alert(`${title}: ${message}`);
+  }
+}
+
+function showModalApiError(title, err) {
+  const message = err?.message ? parseJsonError(err.message) : 'Something went wrong. Please try again.';
+  const code = err?.code || (err?.status ? `HTTP_${err.status}` : 'UNKNOWN_ERROR');
+  if (window.VVModal?.openModal) {
+    window.VVModal.openModal(`
+      <div style="font-weight:700;margin-bottom:8px">${esc(title)}</div>
+      <div>${esc(message)}</div>
+      <div class="small mono" style="margin-top:10px;color:var(--ink-2)">Error code: ${esc(code)}</div>
+    `);
+  } else {
+    alert(`${title}: ${message} (${code})`);
   }
 }
 

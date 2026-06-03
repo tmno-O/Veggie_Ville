@@ -1,31 +1,16 @@
 require('dotenv').config();
 const express = require('express');
 const cors    = require('cors');
-const http    = require('http');
 const path    = require('path');
-const multer  = require('multer');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// Serve frontend
 app.use(express.static(path.join(__dirname, 'public')));
-app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, path.join(__dirname, 'public/uploads')),
-  filename:    (req, file, cb) => cb(null, `${Date.now()}-${file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_')}`)
-});
-const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 }, fileFilter: (req, file, cb) => {
-  if (file.mimetype.startsWith('image/')) cb(null, true);
-  else cb(new Error('Only image files are allowed'));
-}});
-
-const authenticate = require('./middlewares/auth');
-app.post('/api/upload', authenticate, upload.single('image'), (req, res) => {
-  if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
-  res.json({ url: `/uploads/${req.file.filename}` });
-});
 app.get('/', (_req, res) => res.sendFile(path.join(__dirname, 'index.html')));
+app.get(/^\/(?!api).*/, (_req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
 // Health check
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
@@ -40,6 +25,7 @@ app.use('/api/admin/users',  require('./routes/admin.routes'));
 
 // Admin order route (reuse same controller)
 const orderController = require('./controllers/order.controller');
+const authenticate    = require('./middlewares/auth');
 const requireRole     = require('./middlewares/role');
 
 app.get(
@@ -49,46 +35,30 @@ app.get(
   orderController.getAllOrders
 );
 
-// Ignore favicon requests to prevent 500 errors
-app.get('/favicon.ico', (req, res) => res.status(204).end());
-
-// SPA fallback — serve the wireframe shell for any non-API route
-app.get(/^(?!\/api|\/socket\.io|\/veggie-ui\.css|\/veggie-ui\.js|\/modal\.js|\/public).*/, (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
-});
+// JSON parse error handler — must register before the generic handler
+function jsonParseErrorHandler(err, req, res, next) {
+  if (err.type === 'entity.parse.failed') {
+    const isAuth = (req.originalUrl || '').startsWith('/api/auth');
+    return res.status(400).json({
+      code: isAuth ? 'AUTH_INVALID_JSON' : 'INVALID_JSON',
+      message: 'The request body is not valid JSON.'
+    });
+  }
+  next(err);
+}
 
 // Global error handler — never expose stack trace
-app.use((err, _req, res, _next) => {
+function globalErrorHandler(err, _req, res, _next) {
   console.error('[ERROR]', err);
   res.status(500).json({ message: 'Internal server error' });
-});
+}
+
+app.use(jsonParseErrorHandler);
+app.use(globalErrorHandler);
 
 const PORT = process.env.PORT || 3000;
+if (require.main === module) {
+  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+}
 
-// Create HTTP server and attach Socket.IO
-const server = http.createServer(app);
-const { Server } = require('socket.io');
-const io = new Server(server, { cors: { origin: '*', methods: ['GET','POST'] } });
-// store io for other modules
-require('./lib/socket').set(io);
-
-io.on('connection', socket => {
-  // expect token in handshake auth: { token }
-  const token = socket.handshake.auth && socket.handshake.auth.token;
-  if (!token) return; // unauthenticated sockets are ignored for room join
-  const jwt = require('jsonwebtoken');
-  try {
-    const payload = jwt.verify(token, process.env.JWT_SECRET);
-    const uid = payload.id;
-    if (uid) {
-      socket.join(`user:${uid}`);
-    }
-    if (payload && payload.role === 'admin') {
-      socket.join('admins');
-    }
-  } catch (err) {
-    // ignore invalid token
-  }
-});
-
-server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+module.exports = { app, jsonParseErrorHandler };

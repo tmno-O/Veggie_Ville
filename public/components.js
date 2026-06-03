@@ -5,36 +5,62 @@
 
   // ---------- reusable wireframe fragments ----------
   const navBarMobile = `
-    <div class="nav-bar">
-      <div class="logo">VV</div>
-      <div class="icon" title="hamburger">☰</div>
-      <div class="search" style="flex:1">Search…</div>
-      <div class="icon" title="cart">🛒</div>
-      <div class="avatar"></div>
+    <div class="nav-bar vvn-bar">
+      <button class="icon" title="hamburger" style="background:none;border:none;cursor:pointer;font-size:18px;padding:8px;color:#242220">☰</button>
+      <div class="logo vvn-logo" style="display:flex;align-items:center;gap:8px;cursor:pointer;text-decoration:none">
+        <div class="vvn-logo-icon">🌱</div>
+        <div class="vvn-logo-text">
+          <div class="vvn-logo-name">Veggie Ville</div>
+        </div>
+      </div>
+      <div style="flex:1"></div>
+      <div class="icon" title="cart" style="position:relative;cursor:pointer;font-size:18px;padding:8px;display:flex;align-items:center;justify-content:center">🛒</div>
     </div>`;
 
   const navBarMobileLogoOnly = `
-    <div class="nav-bar" style="justify-content:center">
-      <div class="logo">VV — Veggie Ville</div>
+    <div class="nav-bar vvn-bar" style="justify-content:center">
+      <div class="logo vvn-logo" style="display:flex;align-items:center;gap:8px;cursor:pointer">
+        <div class="vvn-logo-icon">🌱</div>
+        <div class="vvn-logo-text">
+          <div class="vvn-logo-name">Veggie Ville</div>
+          <div class="vvn-logo-tag">Fresh from your neighbors</div>
+        </div>
+      </div>
     </div>`;
 
   const navBarDesktop = `
-    <div class="nav-bar" style="padding:12px 24px">
-      <div class="logo">VV — Veggie Ville</div>
-      <div class="search">🔍&nbsp; Search produce, herbs, eggs…</div>
-      <span class="link">Browse</span>
-      <span class="link">Sell</span>
-      <div class="icon">🛒</div>
-      <div class="avatar"></div>
+    <div class="nav-bar vvn-bar">
+      <div class="logo vvn-logo" style="display:flex;align-items:center;gap:10px;cursor:pointer;flex-shrink:0;text-decoration:none">
+        <div class="vvn-logo-icon">🌱</div>
+        <div class="vvn-logo-text">
+          <div class="vvn-logo-name">Veggie Ville</div>
+          <div class="vvn-logo-tag">Fresh from your neighbors</div>
+        </div>
+      </div>
+      <div class="vvn-links">
+        <span class="vvn-link link">Browse</span>
+        <span class="vvn-link link">Sell</span>
+        <span class="vvn-link link" data-route="/#how-it-works">How It Works</span>
+      </div>
+      <div style="flex:1"></div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="icon" title="cart" style="width:40px;height:40px;border-radius:8px;border:1px solid var(--vv-border);background:white;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;position:relative">🛒</div>
+        <div class="avatar" style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#AEDDC2,#4DB37D);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#1A723E;cursor:pointer;border:2px solid #D6F0E0;flex-shrink:0">VV</div>
+      </div>
     </div>`;
 
   const navBarDesktopAdmin = `
-    <div class="nav-bar" style="padding:12px 24px">
-      <div class="logo">VV — Admin Console</div>
-      <span class="badge" style="margin-left:8px">👑 ADMIN</span>
+    <div class="nav-bar vvn-bar">
+      <div class="logo vvn-logo" style="display:flex;align-items:center;gap:10px;cursor:pointer;flex-shrink:0">
+        <div class="vvn-logo-icon">🌱</div>
+        <div class="vvn-logo-text">
+          <div class="vvn-logo-name">Veggie Ville — Admin</div>
+          <div class="vvn-logo-tag">Admin Console</div>
+        </div>
+      </div>
+      <span class="badge" style="margin-left:8px;background:#9A2419;color:#fff;border-color:#9A2419">👑 ADMIN</span>
       <div style="flex:1"></div>
-      <span class="link mono small">admin@veggieville.local</span>
-      <div class="avatar"></div>
+      <div class="avatar" style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#AEDDC2,#4DB37D);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#1A723E;cursor:pointer;border:2px solid #D6F0E0"></div>
     </div>`;
 
   const bottomNav = `
@@ -47,31 +73,54 @@
 
   const footerMini = `<div class="footer-mini">© 2026 Veggie Ville · Terms · Privacy</div>`;
   const footerFull = `
-    <div class="footer">
-      <div><h5>Veggie Ville</h5>Community garden-share marketplace.</div>
-      <div>
-        <h5>Shop</h5>
-        <span data-route="/browse" style="cursor:pointer;display:block;margin-bottom:4px;color:inherit">Browse</span>
-        <span data-route="/browse" style="cursor:pointer;display:block;margin-bottom:4px;color:inherit">Categories</span>
-        <span data-route="/browse" style="cursor:pointer;display:block;color:inherit">Sellers near me</span>
+    <footer style="background:#F2F1EE;border-top:1px solid #E4E2DC;padding:48px 32px 24px;margin-top:auto">
+      <div style="max-width:1200px;margin:0 auto">
+        <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:40px;margin-bottom:40px">
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+              <div style="width:28px;height:28px;border-radius:6px;background:linear-gradient(135deg,#2E9E60,#1A723E);display:flex;align-items:center;justify-content:center;font-size:14px">🌱</div>
+              <span style="font-size:16px;font-weight:700;color:#242220">Veggie Ville</span>
+            </div>
+            <div style="font-size:13px;color:#2E9E60;font-style:italic;margin-bottom:12px">Fresh from your neighbors</div>
+            <div style="font-size:13px;color:#6E6B65;max-width:240px;line-height:1.6">A community marketplace where neighbors share the abundance of their gardens.</div>
+          </div>
+          <div>
+            <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#242220;margin-bottom:14px">Shop</div>
+            ${['Browse Listings','Categories','Sellers Near Me','New Arrivals'].map(l=>`<span data-route="/browse" style="display:block;font-size:13px;color:#6E6B65;margin-bottom:8px;cursor:pointer">${l}</span>`).join('')}
+          </div>
+          <div>
+            <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#242220;margin-bottom:14px">Sell</div>
+            ${['Post a Listing','Seller Guide','Pickup Slots','Pricing Tips'].map(l=>`<span data-route="/seller" style="display:block;font-size:13px;color:#6E6B65;margin-bottom:8px;cursor:pointer">${l}</span>`).join('')}
+          </div>
+          <div>
+            <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#242220;margin-bottom:14px">Support</div>
+            ${['FAQ','Community Guidelines','Terms of Service','Privacy Policy'].map(l=>`<span style="display:block;font-size:13px;color:#6E6B65;margin-bottom:8px;cursor:pointer">${l}</span>`).join('')}
+          </div>
+        </div>
+        <div style="border-top:1px solid #E4E2DC;padding-top:20px;display:flex;align-items:center;justify-content:space-between">
+          <span style="font-size:12px;color:#6E6B65">© 2026 Veggie Ville · Built with 💚 for the community</span>
+          <div style="display:flex;gap:12px">${['🐦','📘','📸','📌'].map(ic=>`<span style="font-size:18px;cursor:pointer;opacity:0.6">${ic}</span>`).join('')}</div>
+        </div>
       </div>
-      <div>
-        <h5>Sell</h5>
-        <span data-route="/seller" style="cursor:pointer;display:block;margin-bottom:4px;color:inherit">Become a seller</span>
-        <span data-route="/listing" style="cursor:pointer;display:block;margin-bottom:4px;color:inherit">Listing guide</span>
-        <span data-route="/pickup-slots" style="cursor:pointer;display:block;color:inherit">Pickup slots</span>
-      </div>
-      <div>
-        <h5>Support</h5>
-        <span style="cursor:pointer;display:block;margin-bottom:4px;color:inherit">FAQ</span>
-        <span style="cursor:pointer;display:block;margin-bottom:4px;color:inherit">Terms</span>
-        <span style="cursor:pointer;display:block;color:inherit">Privacy</span>
-      </div>
-    </div>`;
+    </footer>`;
+
+  const CAT_META = {
+    Vegetable: { emoji: '🥬', bg: 'linear-gradient(145deg,#F0FAF4 0%,#DCFCE7 100%)' },
+    Fruit:     { emoji: '🍓', bg: 'linear-gradient(145deg,#FDF2EF 0%,#FAD9CF 100%)' },
+    Herb:      { emoji: '🌿', bg: 'linear-gradient(145deg,#F0FAF4 0%,#AEDDC2 100%)' },
+    Honey:     { emoji: '🍯', bg: 'linear-gradient(145deg,#FFFBF0 0%,#FEF3D0 100%)' },
+    Egg:       { emoji: '🥚', bg: 'linear-gradient(145deg,#FAFAF8 0%,#F2F1EE 100%)' },
+  };
+
+  function getExpiryTag(exp) {
+    const diff = exp ? (new Date(exp) - new Date()) / (1000*60*60*24) : 999;
+    if (diff < 0) return `<span class="vve-tag vve-expired">Expired ${escapeHtml(exp)}</span>`;
+    if (diff <= 7) return `<span class="vve-tag vve-expiring">⚠ Best before ${escapeHtml(exp)}</span>`;
+    return `<span class="vve-tag vve-normal">Best before ${escapeHtml(exp)}</span>`;
+  }
 
   const productCard = (opts={}) => {
-    const {size='M', exp='2027-08-12', expDanger=false, name='Cherry tomato', price='฿120', addBtn=true, id=null, category: explicitCategory=null, image_url=null} = opts;
-    // infer category from name when not explicitly provided
+    const {size='M', exp='2027-08-12', expDanger=false, name='Cherry tomato', price='฿120', addBtn=true, id=null, category: explicitCategory=null} = opts;
     const nl = (name||'').toLowerCase();
     let category = 'Vegetable';
     if(/egg|eggs/.test(nl)) category = 'Egg';
@@ -80,28 +129,26 @@
     else if(/strawberry|apple|banana|berry|lemon|lime|orange/.test(nl)) category = 'Fruit';
     if(explicitCategory) category = explicitCategory;
     const slug = id || nl.replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
-    const safeName = escapeHtml(name);
-    const safeSize = escapeHtml(size);
-    const safeCategory = escapeHtml(category);
-    const safePrice = escapeHtml(price);
-    const safeExp = escapeHtml(exp);
-    const safeId = escapeHtml(slug);
-    const safeImg = image_url ? escapeHtml(image_url) : null;
+    const meta = CAT_META[category] || CAT_META.Vegetable;
+    const safeId = escapeHtml(String(slug));
     return `
-      <div class="pcard" data-id="${safeId}" data-name="${safeName}" data-category="${safeCategory}" data-size="${safeSize}" data-price="${safePrice}" data-exp="${safeExp}">
-        ${safeImg
-          ? `<img src="${safeImg}" alt="${safeName}" style="width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:0;display:block">`
-          : `<div class="img-ph" style="border-radius:0;border-left:none;border-right:none;border-top:none"></div>`
-        }
-        <div class="body">
-          <div class="name">${safeName}</div>
-          <div class="meta">
-            <span class="badge">${safeSize}</span>
-            <span class="tag ${expDanger?'danger':''}" title="best_before">⏳ ${safeExp}</span>
+      <div class="vvc-card pcard" data-id="${safeId}" data-name="${escapeHtml(name)}" data-category="${escapeHtml(category)}" data-size="${escapeHtml(size)}" data-price="${escapeHtml(price)}" data-exp="${escapeHtml(exp)}">
+        <div class="vvc-img" style="background:${meta.bg};min-height:160px;position:relative">
+          <span class="vvc-img-emoji">${meta.emoji}</span>
+          <button class="vvc-fav" onclick="event.stopPropagation()">🤍</button>
+          <div style="position:absolute;bottom:8px;left:8px">${getExpiryTag(exp)}</div>
+        </div>
+        <div class="vvc-body">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+            <div style="min-width:0">
+              <div class="vvc-category">${escapeHtml(category)}</div>
+              <div class="vvc-name">${escapeHtml(name)}</div>
+            </div>
+            <span style="background:#F2F1EE;color:#56534E;font-size:11px;font-weight:600;padding:2px 7px;border-radius:4px;flex-shrink:0;white-space:nowrap">${escapeHtml(size)}</span>
           </div>
-          <div class="row between">
-            <div class="price">${safePrice}</div>
-            ${addBtn?'<button class="btn sm">Add</button>':''}
+          <div class="vvc-footer">
+            <div><span class="vvc-price">${escapeHtml(price)}</span></div>
+            ${addBtn ? `<button class="btn sm" style="background:var(--vv-primary);color:white;border-color:var(--vv-primary)">Add</button>` : ''}
           </div>
         </div>
       </div>`;
@@ -133,50 +180,175 @@
     apis:'GET /api/products?limit=12 · GET /api/categories',
     mobile:`
       ${navBarMobile}
-      <div class="surface vv-center">
-        <div class="h1">Fresh from your neighbors</div>
-        <div class="small" style="margin-top:6px">Buy &amp; swap home-grown produce</div>
-        <button class="btn full" style="margin-top:12px">Browse Products</button>
+      <div style="background:linear-gradient(135deg,#F0FAF4 0%,#DCFCE7 40%,#AEDDC2 100%);padding:32px 16px 24px;position:relative;overflow:hidden">
+        <div style="position:absolute;top:-30px;right:-30px;font-size:120px;opacity:0.06;pointer-events:none">🌿</div>
+        <div style="position:relative;z-index:1">
+          <div style="display:inline-flex;align-items:center;gap:6px;background:white;border:1px solid #AEDDC2;border-radius:999px;padding:4px 12px;margin-bottom:14px;box-shadow:0 1px 4px rgba(46,158,96,.08)">
+            <span style="font-size:12px">🌱</span>
+            <span style="font-size:12px;font-weight:600;color:#2E9E60">Fresh from local gardens</span>
+          </div>
+          <h1 style="font-size:30px;font-weight:800;color:#0A3D20;line-height:1.15;letter-spacing:-0.02em;margin:0 0 12px">Fresh from your<br><span style="color:#2E9E60">neighbors</span></h1>
+          <p style="font-size:14px;color:#3B3936;line-height:1.6;margin:0 0 20px">Buy, sell and swap home-grown vegetables, fruits, herbs, honey, and eggs.</p>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn" style="font-size:14px;height:42px;padding:0 20px">Browse Products</button>
+            <button class="btn ghost" style="font-size:14px;height:42px;padding:0 20px">Become a Seller</button>
+          </div>
+        </div>
+      </div>
+      <div style="background:#2E9E60;padding:16px">
+        <div style="display:flex;gap:20px;overflow-x:auto;justify-content:space-around;flex-wrap:wrap;gap:10px">
+          ${[['🌿','Natural'],['👥','Community'],['🛡️','Trusted'],['♻️','Sustainable'],['☀️','Local']].map(([ic,lb])=>`<div style="display:flex;align-items:center;gap:6px;color:white;white-space:nowrap"><span style="font-size:16px">${ic}</span><span style="font-weight:600;font-size:12px">${lb}</span></div>`).join('')}
+        </div>
       </div>
       ${pills('All')}
       <div class="stack-12">
-        ${productCard({id:101,name:'Cherry tomato',size:'M',exp:'2026-05-20',expDanger:true,price:'฿120',category:'Vegetable'})}
-        ${productCard({id:102,name:'Basil bunch',size:'S',exp:'2026-05-18',expDanger:true,price:'฿45',category:'Herb'})}
-        ${productCard({id:103,name:'Free-range eggs',size:'L',exp:'2026-06-04',price:'฿180',category:'Egg'})}
+        ${productCard({id:101,name:'Cherry tomato',size:'M',exp:'2026-07-20',price:'฿120',category:'Vegetable'})}
+        ${productCard({id:102,name:'Basil bunch',size:'S',exp:'2026-06-28',price:'฿45',category:'Herb'})}
+        ${productCard({id:103,name:'Free-range eggs',size:'L',exp:'2026-07-04',price:'฿180',category:'Egg'})}
         ${productCard({id:104,name:'Wildflower honey',size:'M',exp:'2027-01-01',price:'฿320',category:'Honey'})}
       </div>
-      ${api('GET /api/products?limit=6&amp;offset=0 · infinite scroll')}
-      ${callout('Server returns only listings where best_before &gt;= today. Expired rows never reach the client.','⚡ Expiry filter: server hides best_before &lt; today')}
       ${footerMini}
       ${bottomNav}
     `,
     desktop:`
       ${navBarDesktop}
-      <div style="padding:32px 64px 0">
-        <div class="grid-2" style="gap:32px;align-items:center">
-          <div class="stack-12">
-            <h1 class="h1" style="font-size:36px">Fresh from your neighbors</h1>
-            <div class="small" style="font-size:14px">Buy &amp; swap home-grown produce. Pick up nearby on weekends.</div>
-            <div class="row"><button class="btn">Browse Products</button><button class="btn ghost">Become a Seller</button></div>
+      <div class="vv-hero" style="position:relative">
+        <div class="vv-hero-deco">🌿</div>
+        <div style="max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center">
+          <div style="position:relative;z-index:1">
+            <div style="display:inline-flex;align-items:center;gap:8px;background:white;border:1px solid #AEDDC2;border-radius:999px;padding:5px 14px;margin-bottom:20px;box-shadow:0 1px 4px rgba(46,158,96,.08)">
+              <span style="font-size:14px">🌱</span>
+              <span style="font-size:13px;font-weight:600;color:#2E9E60">Fresh from local gardens this week</span>
+            </div>
+            <h1 style="font-size:52px;font-weight:800;color:#0A3D20;line-height:1.1;letter-spacing:-0.03em;margin:0 0 18px">Fresh from your<br><span style="color:#2E9E60">neighbors</span></h1>
+            <p style="font-size:17px;color:#3B3936;line-height:1.65;max-width:440px;margin:0 0 32px">Buy, sell and swap home-grown vegetables, fruits, herbs, honey, and eggs — right in your community.</p>
+            <div style="display:flex;gap:12px;flex-wrap:wrap">
+              <button class="vv-btn" style="font-size:16px;height:50px;padding:0 28px">Browse Listings</button>
+              <button class="vv-btn vv-btn-outline" style="font-size:16px;height:50px;padding:0 28px">Start Selling</button>
+            </div>
           </div>
-          <div class="img-ph banner"></div>
-        </div>
-        <div style="margin-top:24px">${pills('All')}</div>
-      </div>
-      <div class="vv-panel-bg">
-        <div class="row between" style="margin-bottom:12px"><div class="h2">Just listed</div></div>
-        <div class="grid-4">
-          ${productCard({id:101,name:'Cherry tomato',size:'M',exp:'2026-05-20',expDanger:true,price:'฿120',category:'Vegetable'})}
-          ${productCard({id:102,name:'Basil bunch',size:'S',exp:'2026-05-18',expDanger:true,price:'฿45',category:'Herb'})}
-          ${productCard({id:103,name:'Free-range eggs',size:'L',exp:'2026-06-04',price:'฿180',category:'Egg'})}
-          ${productCard({id:104,name:'Wildflower honey',size:'M',exp:'2027-01-01',price:'฿320',category:'Honey'})}
-          ${productCard({id:105,name:'Pumpkin',size:'XL',exp:'2026-09-10',price:'฿95',category:'Vegetable'})}
-          ${productCard({id:106,name:'Mint',size:'S',exp:'2026-05-22',expDanger:true,price:'฿30',category:'Herb'})}
-          ${productCard({id:107,name:'Cucumber',size:'M',exp:'2026-05-30',price:'฿60',category:'Vegetable'})}
-          ${productCard({id:108,name:'Strawberry',size:'S',exp:'2026-05-19',expDanger:true,price:'฿220',category:'Fruit'})}
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            ${[
+              {cat:'Vegetable',emoji:'🍅',label:'Roma Tomatoes',price:'฿120/lb'},
+              {cat:'Honey',emoji:'🍯',label:'Raw Honey',price:'฿320/jar'},
+              {cat:'Herb',emoji:'🌿',label:'Fresh Basil',price:'฿45/bunch'},
+              {cat:'Egg',emoji:'🥚',label:'Free-Range Eggs',price:'฿180/doz'},
+            ].map(item=>{
+              const meta = CAT_META[item.cat] || CAT_META.Vegetable;
+              return `<div style="background:${meta.bg};border-radius:16px;padding:20px 16px;border:1px solid rgba(255,255,255,0.8);box-shadow:0 2px 8px rgba(0,0,0,0.06)"><div style="font-size:32px;margin-bottom:8px">${item.emoji}</div><div style="font-weight:700;font-size:13px;color:#242220">${item.label}</div><div style="font-size:12px;color:#2E9E60;font-weight:600;margin-top:3px">${item.price}</div></div>`;
+            }).join('')}
+          </div>
         </div>
       </div>
-      <div style="padding:24px 64px">${callout('Server returns only listings where best_before &gt;= today. Expired rows never reach the client.','⚡ Expiry filter: server hides best_before &lt; today')}</div>
+      <div style="background:#2E9E60;padding:22px 32px">
+        <div style="max-width:1200px;margin:0 auto;display:flex;justify-content:space-around;gap:24px;flex-wrap:wrap">
+          ${[['🌿','Natural & Organic'],['👥','Community First'],['🛡️','Trusted Sellers'],['♻️','Sustainable'],['☀️','Warm & Local']].map(([ic,lb])=>`<div style="display:flex;align-items:center;gap:10px;color:white"><span style="font-size:22px">${ic}</span><span style="font-weight:600;font-size:14px">${lb}</span></div>`).join('')}
+        </div>
+      </div>
+      <div style="background:#FAFAF8;padding:56px 32px">
+        <div style="max-width:1200px;margin:0 auto">
+          <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:24px">
+            <div>
+              <h2 style="font-size:26px;font-weight:700;color:#242220;margin:0 0 6px;letter-spacing:-0.02em">Just Harvested</h2>
+              <p style="font-size:15px;color:#6E6B65;margin:0">Fresh from local gardens this week</p>
+            </div>
+            <button class="btn ghost sm">View all →</button>
+          </div>
+          ${pills('All')}
+          <div class="grid-4" style="margin-top:20px">
+            ${productCard({id:101,name:'Cherry tomato',size:'M',exp:'2026-07-20',price:'฿120',category:'Vegetable'})}
+            ${productCard({id:102,name:'Basil bunch',size:'S',exp:'2026-06-28',price:'฿45',category:'Herb'})}
+            ${productCard({id:103,name:'Free-range eggs',size:'L',exp:'2026-07-04',price:'฿180',category:'Egg'})}
+            ${productCard({id:104,name:'Wildflower honey',size:'M',exp:'2027-01-01',price:'฿320',category:'Honey'})}
+            ${productCard({id:105,name:'Pumpkin',size:'XL',exp:'2026-09-10',price:'฿95',category:'Vegetable'})}
+            ${productCard({id:106,name:'Mint',size:'S',exp:'2026-07-12',price:'฿30',category:'Herb'})}
+            ${productCard({id:107,name:'Cucumber',size:'M',exp:'2026-07-18',price:'฿60',category:'Vegetable'})}
+            ${productCard({id:108,name:'Strawberry',size:'S',exp:'2026-07-08',price:'฿220',category:'Fruit'})}
+          </div>
+        </div>
+      </div>
+      <div style="padding:56px 32px">
+        <div style="max-width:1200px;margin:0 auto">
+          <div style="text-align:center;margin-bottom:40px">
+            <h2 style="font-size:26px;font-weight:700;color:#242220;margin:0 0 8px;letter-spacing:-0.02em">Shop by Category</h2>
+            <p style="font-size:15px;color:#6E6B65;margin:0">Find exactly what you're looking for</p>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:16px">
+            ${[
+              {name:'Vegetable',emoji:'🥬',count:'42'},
+              {name:'Fruit',emoji:'🍓',count:'28'},
+              {name:'Herb',emoji:'🌿',count:'35'},
+              {name:'Honey',emoji:'🍯',count:'12'},
+              {name:'Egg',emoji:'🥚',count:'18'},
+            ].map(cat=>{
+              const meta = CAT_META[cat.name] || CAT_META.Vegetable;
+              return `<div style="background:${meta.bg};border-radius:20px;padding:28px 16px;text-align:center;cursor:pointer;border:1px solid rgba(255,255,255,0.7);transition:transform 0.2s" onmouseover="this.style.transform='translateY(-4px)'" onmouseout="this.style.transform=''"><div style="font-size:40px;margin-bottom:12px">${cat.emoji}</div><div style="font-weight:700;font-size:15px;color:#242220">${cat.name}s</div><div style="font-size:12px;color:#6E6B65;margin-top:4px">${cat.count} listings</div></div>`;
+            }).join('')}
+          </div>
+        </div>
+      </div>
+      <div id="how-it-works" style="background:#F0FAF4;padding:56px 32px;scroll-margin-top:80px">
+        <div style="max-width:1200px;margin:0 auto">
+          <div style="text-align:center;margin-bottom:48px">
+            <h2 style="font-size:26px;font-weight:700;color:#242220;margin:0 0 8px;letter-spacing:-0.02em">How Veggie Ville Works</h2>
+            <p style="font-size:15px;color:#6E6B65;margin:0">From garden to neighbor in 3 simple steps</p>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px">
+            ${[
+              {icon:'🌱',step:'1',title:'Post Your Harvest',desc:'List your freshly-picked produce with photos, price, and pickup details in under 2 minutes.'},
+              {icon:'🔍',step:'2',title:'Browse Nearby',desc:'Discover what your neighbors are growing and filter by category, price, and availability.'},
+              {icon:'🤝',step:'3',title:'Meet & Exchange',desc:'Arrange a convenient pickup and enjoy fresh, locally-grown produce from your community.'},
+            ].map(s=>`
+              <div style="text-align:center;padding:8px 24px">
+                <div style="display:flex;justify-content:center;margin-bottom:20px">
+                  <div style="width:80px;height:80px;border-radius:20px;background:white;border:2px solid #AEDDC2;display:flex;align-items:center;justify-content:center;font-size:36px;box-shadow:0 4px 12px rgba(46,158,96,.1)">${s.icon}</div>
+                </div>
+                <div style="display:flex;justify-content:center;margin-bottom:12px">
+                  <div style="width:24px;height:24px;border-radius:12px;background:#2E9E60;color:white;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center">${s.step}</div>
+                </div>
+                <h3 style="font-size:18px;font-weight:700;color:#0A3D20;margin:0 0 10px;letter-spacing:-0.01em">${s.title}</h3>
+                <p style="font-size:14px;color:#6E6B65;line-height:1.6;margin:0">${s.desc}</p>
+              </div>`).join('')}
+          </div>
+        </div>
+      </div>
+      <div style="padding:56px 32px">
+        <div style="max-width:1200px;margin:0 auto">
+          <div style="text-align:center;margin-bottom:40px">
+            <h2 style="font-size:26px;font-weight:700;color:#242220;margin:0 0 8px;letter-spacing:-0.02em">What Neighbors Are Saying</h2>
+            <p style="font-size:15px;color:#6E6B65;margin:0">Real stories from our community</p>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px">
+            ${[
+              {text:'I sold my first batch of heirloom tomatoes within hours! The community is so welcoming.',author:'Ploy T.',neighborhood:'Chatuchak',rating:5},
+              {text:'Found the most amazing raw honey from a neighbor two streets away. So much better than the supermarket!',author:'Niran K.',neighborhood:'On Nut',rating:5},
+              {text:'Love that I can sell my excess herbs every week. It\'s reduced waste and made me some extra income.',author:'Mali S.',neighborhood:'Ladprao',rating:5},
+            ].map((t,i)=>`
+              <div style="background:white;border-radius:16px;border:1px solid #E4E2DC;padding:28px;display:flex;flex-direction:column;gap:16px">
+                <div style="color:#E5A800;font-size:20px;letter-spacing:2px">${'★'.repeat(t.rating)}</div>
+                <p style="font-size:15px;line-height:1.7;color:#3B3936;margin:0;font-style:italic">"${t.text}"</p>
+                <div style="display:flex;align-items:center;gap:12px;border-top:1px solid #F2F1EE;padding-top:16px">
+                  <div style="width:40px;height:40px;border-radius:50%;background:${['#D6F0E0','#FAD9CF','#FEF3D0'][i]};color:${['#1A723E','#B84220','#7A5800'][i]};display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0">${t.author[0]}</div>
+                  <div>
+                    <div style="font-weight:700;font-size:14px">${t.author}</div>
+                    <div style="font-size:12px;color:#6E6B65">📍 ${t.neighborhood}</div>
+                  </div>
+                </div>
+              </div>`).join('')}
+          </div>
+        </div>
+      </div>
+      <div style="background:linear-gradient(135deg,#1A723E 0%,#2E9E60 50%,#4DB37D 100%);padding:64px 32px;text-align:center;position:relative;overflow:hidden">
+        <div style="position:absolute;top:-40px;right:-40px;font-size:180px;opacity:0.07;pointer-events:none">🌾</div>
+        <div style="position:relative;z-index:1">
+          <h2 style="font-size:38px;font-weight:800;color:white;margin:0 0 14px;letter-spacing:-0.02em">Start sharing today</h2>
+          <p style="font-size:17px;color:rgba(255,255,255,0.85);max-width:480px;margin:0 auto 32px;line-height:1.6">Join 200+ neighbors already buying and selling home-grown produce in your community.</p>
+          <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap">
+            <button class="btn" style="background:white;color:#2E9E60;border-color:white;font-size:16px;height:50px;padding:0 32px">Browse Listings</button>
+            <button class="btn ghost" style="border-color:rgba(255,255,255,0.5);color:white;font-size:16px;height:50px;padding:0 32px">Post Your Harvest</button>
+          </div>
+        </div>
+      </div>
       ${footerFull}
     `
   });
@@ -229,23 +401,27 @@
       <div style="display:flex">
         <aside class="side-panel">
           <h4>Category</h4>
-          <div class="check on"><span class="box"></span>All</div>
-          <div class="check"><span class="box"></span>Vegetable</div>
-          <div class="check"><span class="box"></span>Fruit</div>
-          <div class="check"><span class="box"></span>Herb</div>
-          <div class="check"><span class="box"></span>Honey</div>
-          <div class="check"><span class="box"></span>Egg</div>
+          <label class="check on"><input type="radio" name="vv-category" value="" class="vv-filter-input" checked><span class="box"></span>All</label>
+          <label class="check"><input type="radio" name="vv-category" value="Vegetable" class="vv-filter-input"><span class="box"></span>Vegetable</label>
+          <label class="check"><input type="radio" name="vv-category" value="Fruit" class="vv-filter-input"><span class="box"></span>Fruit</label>
+          <label class="check"><input type="radio" name="vv-category" value="Herb" class="vv-filter-input"><span class="box"></span>Herb</label>
+          <label class="check"><input type="radio" name="vv-category" value="Honey" class="vv-filter-input"><span class="box"></span>Honey</label>
+          <label class="check"><input type="radio" name="vv-category" value="Egg" class="vv-filter-input"><span class="box"></span>Egg</label>
           <h4>Size</h4>
-          <div class="row"><span class="check"><span class="box"></span>S</span><span class="check on"><span class="box"></span>M</span><span class="check"><span class="box"></span>L</span><span class="check"><span class="box"></span>XL</span></div>
+          <div class="row">
+            <label class="check"><input type="radio" name="vv-size" value="S" class="vv-filter-input"><span class="box"></span>S</label>
+            <label class="check on"><input type="radio" name="vv-size" value="M" class="vv-filter-input" checked><span class="box"></span>M</label>
+            <label class="check"><input type="radio" name="vv-size" value="L" class="vv-filter-input"><span class="box"></span>L</label>
+            <label class="check"><input type="radio" name="vv-size" value="XL" class="vv-filter-input"><span class="box"></span>XL</label>
+          </div>
           <h4>Price range</h4>
           <div class="slider">
-            <div class="small mono">฿0 — ฿500</div>
-            <div class="track" style="position:relative">
-              <div class="thumb" style="left:18%"></div><div class="thumb" style="left:62%"></div>
-            </div>
+            <div class="small mono">฿<span class="vv-min-price">0</span> — ฿<span class="vv-max-price">500</span></div>
+            <input type="range" name="minPrice" class="vv-filter-input" min="0" max="500" value="0" style="width:100%">
+            <input type="range" name="maxPrice" class="vv-filter-input" min="0" max="500" value="500" style="width:100%">
           </div>
           <h4>Best before</h4>
-          <div class="check"><span class="box"></span>Show expiring soon (&lt;7d)</div>
+          <label class="check"><input type="checkbox" name="vv-exp" value="true" class="vv-filter-input"><span class="box"></span>Show expiring soon (&lt;7d)</label>
         </aside>
         <div style="flex:1;padding:24px">
           <div class="row between" style="margin-bottom:12px">
@@ -265,8 +441,8 @@
             ${productCard({id:112,name:'Yellow tomato',size:'S',exp:'2026-06-08',price:'฿110',category:'Vegetable'})}
             ${productCard({name:'Green tomato',size:'M',exp:'2026-06-12',price:'฿70'})}
           </div>
-          <div class="row" style="justify-content:center;margin-top:16px">
-            <span class="tag">‹</span><span class="tag" style="background:#111;color:#fff">1</span><span class="tag">2</span><span class="tag">3</span><span class="tag">…</span><span class="tag">›</span>
+          <div class="row vv-pagination-row" style="justify-content:center;margin-top:16px">
+            <span class="tag vv-page-btn">‹</span><span class="tag vv-page-btn" style="background:#111;color:#fff">1</span><span class="tag vv-page-btn">2</span><span class="tag vv-page-btn">3</span><span class="tag vv-page-btn">…</span><span class="tag vv-page-btn">›</span>
           </div>
           <div style="margin-top:16px">${api('GET /api/products?category=vegetable&amp;size=M&amp;min=0&amp;max=500&amp;keyword=tomato&amp;sort=newest&amp;page=2')}</div>
         </div>
@@ -281,22 +457,22 @@
     apis:'GET /api/products/:id · GET /api/products?seller_id=&exclude=:id',
     mobile:`
       ${navBarMobile}
-      <div class="img-ph"></div>
+      <img class="img-ph vv-product-hero" src="" alt="">
       <div class="stack-8">
-        <div class="h1">Heirloom tomato — Sungold</div>
-        <div class="row" style="gap:6px"><span class="badge">M</span><span class="tag">⏳ Best before 2026-06-02</span></div>
-        <div class="price">฿180 <span class="small">/ 500g</span></div>
+        <div class="h1 vv-product-title"></div>
+        <div class="row" style="gap:6px"><span class="badge vv-product-size"></span><span class="tag vv-product-expiry"></span></div>
+        <div class="price vv-product-price"></div>
         <div class="row" style="gap:8px">
           <div class="avatar"></div>
           <div>
-            <div class="small" style="font-weight:600;color:var(--ink)">Ploy's Backyard Garden</div>
-            <div class="small mono">★ 4.8 · 38 reviews</div>
+            <div class="small vv-seller-name" style="font-weight:600;color:var(--ink)">Ploy's Backyard Garden</div>
+            <div class="small mono vv-seller-meta">★ 4.8 · 38 reviews</div>
           </div>
         </div>
-        <div class="text-lines"><i></i><i></i><i></i></div>
+        <div class="text-lines vv-product-desc"></div>
         <div class="row" style="gap:12px">
           <div class="qty"><span>−</span><span class="n">1</span><span>+</span></div>
-          <span class="small mono">Stock: 12</span>
+          <span class="small mono vv-product-stock"></span>
         </div>
       </div>
       <div class="hr"></div>
@@ -306,7 +482,7 @@
         <div style="min-width:140px">${productCard({name:'Basil',size:'S',price:'฿45',exp:'2026-05-30',addBtn:false})}</div>
         <div style="min-width:140px">${productCard({name:'Mint',size:'S',price:'฿30',exp:'2026-05-22',addBtn:false,expDanger:true})}</div>
       </div>
-      ${api('GET /api/products/42')}
+      ${api('GET /api/products/:id')}
       <div style="position:sticky;bottom:0;background:#fff;padding-top:12px;border-top:1px solid var(--line);margin:0 -16px;padding:12px 16px">
         <button class="btn full">Add to Cart</button>
       </div>
@@ -317,7 +493,7 @@
         <div class="row small mono" style="color:var(--ink-3);margin-bottom:12px">Home / Vegetable / Tomato / Heirloom — Sungold</div>
         <div style="display:grid;grid-template-columns:60% 40%;gap:32px">
           <div>
-            <div class="img-ph" style="aspect-ratio:4/3"></div>
+            <img class="img-ph vv-product-hero" style="aspect-ratio:4/3;width:100%;object-fit:cover" src="" alt="">
             <div class="row" style="margin-top:12px;gap:8px">
               <div class="img-ph" style="width:80px;aspect-ratio:1/1"></div>
               <div class="img-ph" style="width:80px;aspect-ratio:1/1"></div>
@@ -327,22 +503,22 @@
           </div>
           <div class="stack-12">
             <div>
-              <div class="h1" style="font-size:28px">Heirloom tomato — Sungold</div>
-              <div class="row" style="gap:6px;margin-top:6px"><span class="badge">M</span><span class="tag">⏳ Best before 2026-06-02</span></div>
+              <div class="h1 vv-product-title" style="font-size:28px"></div>
+              <div class="row" style="gap:6px;margin-top:6px"><span class="badge vv-product-size"></span><span class="tag vv-product-expiry"></span></div>
             </div>
-            <div class="price" style="font-size:32px">฿180 <span class="small" style="font-weight:400">/ 500g</span></div>
+            <div class="price vv-product-price" style="font-size:32px"></div>
             <div class="surface" style="display:flex;gap:10px;align-items:center">
               <div class="avatar" style="width:36px;height:36px"></div>
               <div>
-                <div style="font-weight:600">Ploy's Backyard Garden</div>
-                <div class="small mono">★ 4.8 · 38 reviews · Bangkok 10110</div>
+                <div class="vv-seller-name" style="font-weight:600">Ploy's Backyard Garden</div>
+                <div class="small mono vv-seller-meta">★ 4.8 · 38 reviews · Bangkok 10110</div>
               </div>
               <button class="btn ghost sm" style="margin-left:auto">View profile</button>
             </div>
-            <div class="text-lines"><i></i><i></i><i></i><i></i></div>
-            <div class="row" style="gap:12px"><div class="qty"><span>−</span><span class="n">1</span><span>+</span></div><span class="small mono">Stock: 12</span></div>
+            <div class="text-lines vv-product-desc"></div>
+            <div class="row" style="gap:12px"><div class="qty"><span>−</span><span class="n">1</span><span>+</span></div><span class="small mono vv-product-stock"></span></div>
             <div class="row" style="gap:8px"><button class="btn">Add to Cart</button><button class="btn ghost">♡ Save to wishlist</button></div>
-            ${api('GET /api/products/42')}
+            ${api('GET /api/products/:id')}
           </div>
         </div>
         <div style="margin-top:32px">
@@ -365,44 +541,37 @@
     apis:'POST /api/auth/register',
     mobile:`
       ${navBarMobileLogoOnly}
-      <div class="surface stack-12">
-        <div class="h1">Create account</div>
-        <div class="input"><label>Full name *</label><div class="field">Somchai Jaidee</div></div>
-        <div class="input ok"><label>Email *</label><div class="field">somchai@example.com</div></div>
-        <div class="input"><label>Password *</label><div class="field">••••••••<span style="margin-left:auto" class="small">show</span></div></div>
-        <div class="input error"><label>Confirm password *</label><div class="field">••••••<span style="margin-left:auto" class="small">show</span></div><div class="help" style="color:var(--error)">Passwords do not match</div></div>
-        <div class="input"><label>I am a *</label><div class="select">Buyer</div></div>
-        <button class="btn full">Create account</button>
-        <div class="row" style="justify-content:center"><span class="small">— or —</span></div>
-        <div class="small vv-center">Already have an account? <b>Login</b></div>
+      <div class="vv-auth-viewport">
+        <div class="surface stack-12 vv-max-420">
+          <div class="h1">Create account</div>
+          <form class="vv-register-form stack-12" data-layout="mobile">
+            <div class="input"><label for="register-name-mobile">Full name *</label><input id="register-name-mobile" class="field" name="name" autocomplete="name" required></div>
+            <div class="input"><label for="register-email-mobile">Email *</label><input id="register-email-mobile" type="email" class="field" name="email" autocomplete="email" required></div>
+            <div class="input"><label for="register-pass-mobile">Password *</label><div class="vv-password-wrap"><input id="register-pass-mobile" type="password" class="field" name="password" autocomplete="new-password" minlength="8" required><button type="button" class="vv-password-toggle" data-password-toggle="register-pass-mobile" aria-label="Show password">👁</button></div></div>
+            <div class="input"><label for="register-confirm-mobile">Confirm password *</label><div class="vv-password-wrap"><input id="register-confirm-mobile" type="password" class="field" name="confirm_password" autocomplete="new-password" minlength="8" required><button type="button" class="vv-password-toggle" data-password-toggle="register-confirm-mobile" aria-label="Show confirm password">👁</button></div><div class="help vv-confirm-help"></div></div>
+            <div class="input"><label for="register-role-mobile">I am a *</label><select id="register-role-mobile" class="field" name="role" required><option value="buyer">Buyer</option><option value="seller">Seller</option></select></div>
+            <button class="btn full" type="submit">Create account</button>
+          </form>
+          <div class="row" style="justify-content:center"><span class="small">— or —</span></div>
+          <div class="small vv-center">Already have an account? <span data-route="/login" style="font-weight:700;cursor:pointer;text-decoration:underline">Login</span></div>
+        </div>
       </div>
-      ${api('POST /api/auth/register { name, email, password, role }')}
-      ${callout('Role enum: buyer | seller. Admin accounts created out-of-band by DB seed.','⚡ Role validation: enum check before INSERT')}
-      ${callout('Email must be unique; bcrypt-hash password before storing in MySQL.','⚡ Unique email + password hash')}
     `,
     desktop:`
-      ${navBarMobileLogoOnly}
-      <div class="vv-grid-hero">
-        <div class="vv-hero-left">
-          <div class="img-ph banner" style="aspect-ratio:4/3;max-width:480px"></div>
-          <div class="h1" style="font-size:28px;max-width:420px">Join your neighborhood's garden share.</div>
-          <div class="small" style="max-width:420px">Sell your harvest, find fresh produce within walking distance.</div>
-        </div>
-        <div class="vv-hero-right">
-          <div class="surface stack-12 vv-max-420">
-            <div class="h1">Create account</div>
-            <div class="input"><label>Full name *</label><div class="field">Somchai Jaidee</div></div>
-            <div class="input ok"><label>Email *</label><div class="field">somchai@example.com</div></div>
-            <div class="grid-2">
-              <div class="input"><label>Password *</label><div class="field">••••••••</div></div>
-              <div class="input error"><label>Confirm *</label><div class="field">••••••</div><div class="help" style="color:var(--error)">Mismatch</div></div>
-            </div>
-            <div class="input"><label>I am a *</label><div class="select">Buyer</div></div>
-            <button class="btn full">Create account</button>
-            <div class="small" style="text-align:center;color:var(--ink-3)">— or —</div>
-            <div class="small vv-center">Already have an account? <b>Login</b></div>
-            ${api('POST /api/auth/register')}
-          </div>
+      ${navBarDesktop}
+      <div class="vv-auth-viewport">
+        <div class="surface stack-12 vv-max-420">
+          <div class="h1">Create account</div>
+          <form class="vv-register-form stack-12" data-layout="desktop">
+            <div class="input"><label for="register-name-desktop">Full name *</label><input id="register-name-desktop" class="field" name="name" autocomplete="name" required></div>
+            <div class="input"><label for="register-email-desktop">Email *</label><input id="register-email-desktop" type="email" class="field" name="email" autocomplete="email" required></div>
+            <div class="input"><label for="register-pass-desktop">Password *</label><div class="vv-password-wrap"><input id="register-pass-desktop" type="password" class="field" name="password" autocomplete="new-password" minlength="8" required><button type="button" class="vv-password-toggle" data-password-toggle="register-pass-desktop" aria-label="Show password">👁</button></div></div>
+            <div class="input"><label for="register-confirm-desktop">Confirm password *</label><div class="vv-password-wrap"><input id="register-confirm-desktop" type="password" class="field" name="confirm_password" autocomplete="new-password" minlength="8" required><button type="button" class="vv-password-toggle" data-password-toggle="register-confirm-desktop" aria-label="Show confirm password">👁</button></div><div class="help vv-confirm-help"></div></div>
+            <div class="input"><label for="register-role-desktop">I am a *</label><select id="register-role-desktop" class="field" name="role" required><option value="buyer">Buyer</option><option value="seller">Seller</option></select></div>
+            <button class="btn full" type="submit">Create account</button>
+          </form>
+          <div class="row" style="justify-content:center"><span class="small">— or —</span></div>
+          <div class="small vv-center">Already have an account? <span data-route="/login" style="font-weight:700;cursor:pointer;text-decoration:underline">Login</span></div>
         </div>
       </div>
       ${footerFull}
@@ -413,34 +582,32 @@
  pages.push({
     id:'p5', name:'Login', auth:'public',
     mobile:`
-      ${navBarMobileLogoOnly}
-      <div class="surface stack-12">
-        <div class="h1">Welcome back</div>
-        <div class="input"><label>Email *</label><input type="email" id="login-email-mobile" class="field" placeholder="somchai@example.com" /></div>
-        <div class="input"><label>Password *</label><input type="password" id="login-pass-mobile" class="field" placeholder="••••" /></div>
-        <span class="small" style="text-align:right;text-decoration:underline;cursor:pointer;display:block" data-route="/login">Forgot password?</span>
-        <button id="btn-submit-login-mobile" class="btn full">Login</button>
-        <div class="small" style="text-align:center;color:var(--ink-3)">— or —</div>
-        <div class="small vv-center">New here? <span data-route="/register" style="font-weight:700;cursor:pointer;text-decoration:underline">Create account</span></div>
+      ${navBarMobile}
+      <div class="vv-auth-viewport">
+        <div class="surface stack-12 vv-max-420">
+          <div class="h1">Welcome back</div>
+          <form class="vv-login-form stack-12" data-layout="mobile">
+            <div class="input"><label for="login-email-mobile">Email *</label><input type="email" id="login-email-mobile" name="email" class="field" autocomplete="email" placeholder="somchai@example.com" required></div>
+            <div class="input"><label for="login-pass-mobile">Password *</label><div class="vv-password-wrap"><input type="password" id="login-pass-mobile" name="password" class="field" autocomplete="current-password" placeholder="••••" required><button type="button" class="vv-password-toggle" data-password-toggle="login-pass-mobile" aria-label="Show password">👁</button></div></div>
+            <button id="btn-submit-login-mobile" class="btn full" type="submit">Login</button>
+          </form>
+          <div class="small" style="text-align:center;color:var(--ink-3)">— or —</div>
+          <div class="small vv-center">New here? <span data-route="/register" style="font-weight:700;cursor:pointer;text-decoration:underline">Create account</span></div>
+        </div>
       </div>
     `,
     desktop:`
-      ${navBarMobileLogoOnly}
-      <div class="vv-grid-hero">
-        <div class="vv-hero-left">
-          <div class="img-ph banner" style="aspect-ratio:4/3;max-width:480px"></div>
-          <div class="h1" style="font-size:28px;max-width:420px">Welcome back. Your neighbors have been busy.</div>
-        </div>
-        <div class="vv-hero-right">
-          <div class="surface stack-12 vv-max-420">
-            <div class="h1">Login</div>
-            <div class="input"><label>Email *</label><input type="email" id="login-email-desktop" class="field" placeholder="somchai@example.com" /></div>
-            <div class="input"><label>Password *</label><input type="password" id="login-pass-desktop" class="field" placeholder="••••" /></div>
-            <span class="small" style="text-align:right;text-decoration:underline;cursor:pointer;display:block" data-route="/login">Forgot password?</span>
-            <button id="btn-submit-login-desktop" class="btn full">Login</button>
-            <div class="small" style="text-align:center;color:var(--ink-3)">— or —</div>
-            <div class="small vv-center">New here? <span data-route="/register" style="font-weight:700;cursor:pointer;text-decoration:underline">Create account</span></div>
-          </div>
+      ${navBarDesktop}
+      <div class="vv-auth-viewport">
+        <div class="surface stack-12 vv-max-420">
+          <div class="h1">Login</div>
+          <form class="vv-login-form stack-12" data-layout="desktop">
+            <div class="input"><label for="login-email-desktop">Email *</label><input type="email" id="login-email-desktop" name="email" class="field" autocomplete="email" placeholder="somchai@example.com" required></div>
+            <div class="input"><label for="login-pass-desktop">Password *</label><div class="vv-password-wrap"><input type="password" id="login-pass-desktop" name="password" class="field" autocomplete="current-password" placeholder="••••" required><button type="button" class="vv-password-toggle" data-password-toggle="login-pass-desktop" aria-label="Show password">👁</button></div></div>
+            <button id="btn-submit-login-desktop" class="btn full" type="submit">Login</button>
+          </form>
+          <div class="small" style="text-align:center;color:var(--ink-3)">— or —</div>
+          <div class="small vv-center">New here? <span data-route="/register" style="font-weight:700;cursor:pointer;text-decoration:underline">Create account</span></div>
         </div>
       </div>
     `

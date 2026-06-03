@@ -15,10 +15,18 @@ const register = async ({ name, email, password, role = 'buyer' }) => {
   if (existing.length > 0) throw new Error('Email already in use');
 
   const hash = await bcrypt.hash(password, 12);
-  const [result] = await pool.query(
-    'INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)',
-    [name, email, hash, role]
-  );
+  let result;
+  try {
+    [result] = await pool.query(
+      'INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)',
+      [name, email, hash, role]
+    );
+  } catch (err) {
+    if (err.code === 'ER_DUP_ENTRY' || err.errno === 1062) {
+      throw new Error('Email already in use');
+    }
+    throw err;
+  }
   return { id: result.insertId, name, email, role };
 };
 

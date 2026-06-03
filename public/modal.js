@@ -1,4 +1,25 @@
 (function(){
+  const esc = window.VVEscape || ((value = '') => String(value).replace(/[&<>"']/g, ch => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[ch])));
+
+  function decodeHtmlEntities(str) {
+    const t = document.createElement('textarea');
+    t.innerHTML = str;
+    return t.value;
+  }
+
+  function friendlyApiMessage(raw) {
+    let s = decodeHtmlEntities(String(raw ?? '').trim());
+    try {
+      const parsed = JSON.parse(s);
+      if (parsed && parsed.message === 'Unauthorized') return 'Please log in to add items.';
+      if (parsed && typeof parsed.message === 'string') return parsed.message;
+    } catch (_) {}
+    if (s === 'Unauthorized') return 'Please log in to add items.';
+    return s;
+  }
+
   function createModal(){
     let existingBackdrop = document.querySelector('.vv-modal-backdrop');
     if(existingBackdrop) return existingBackdrop;
@@ -20,7 +41,20 @@
 
   let lastFocused = null;
   const VVModal = {
+    friendlyApiMessage,
+    openCartModal(message) {
+      return this.openModal(
+        `<div style="font-weight:700;margin-bottom:8px">Failed to add to cart</div>` +
+        `<div style="color:#333;margin-bottom:8px">${esc(friendlyApiMessage(message))}</div>`
+      );
+    },
     openModal(html){
+      if (typeof html === 'string' && html.includes('Failed to add to cart')) {
+        html = html.replace(
+          /(<div style="color:#333;margin-bottom:8px">)([\s\S]*?)(<\/div>)/,
+          (_, pre, raw, post) => pre + esc(friendlyApiMessage(raw)) + post
+        );
+      }
       const backdrop = createModal();
       const modal = backdrop.querySelector('.vv-modal');
       const body = modal.querySelector('.vv-modal-body');
@@ -52,7 +86,6 @@
     }
   };
 
-  // expose globally and for CommonJS
   window.VVModal = VVModal;
   if(typeof module !== 'undefined' && module.exports){ module.exports = VVModal; }
 })();
