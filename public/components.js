@@ -866,7 +866,7 @@
           <div class="check"><span class="box"></span>Settings</div>
         </aside>
         <div style="flex:1;padding:24px">
-          <div class="row between" style="margin-bottom:12px"><div class="h1">Seller dashboard</div><button class="btn">+ Add new listing</button></div>
+          <div class="row between" style="margin-bottom:12px"><div class="h1">Seller dashboard</div><button class="btn" data-route="/listing">+ Add new listing</button></div>
           ${callout('JWT must contain role=seller. Else 403.','🔒 Seller role required')}
           <div class="grid-4" style="margin-top:12px">
             <div class="stat"><div class="k">Total listings</div><div class="v vv-stat-total">—</div></div>

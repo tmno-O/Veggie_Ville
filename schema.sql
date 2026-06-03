@@ -56,7 +56,8 @@ CREATE TABLE orders (
   FOREIGN KEY (buyer_id)       REFERENCES users(id)        ON DELETE CASCADE,
   -- RESTRICT (not CASCADE): deleting a slot must not silently destroy order history
   FOREIGN KEY (pickup_slot_id) REFERENCES pickup_slots(id) ON DELETE RESTRICT
-);
+  );
+
 
 CREATE TABLE order_items (
   id         INT AUTO_INCREMENT PRIMARY KEY,

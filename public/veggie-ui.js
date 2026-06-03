@@ -123,6 +123,7 @@
   window.VVAuth = { setToken: setAuthToken, fetchMe, authFetch, connectSocket, logout, lsRemove };
   // convenience: perform login and persist token
   window.VVAuth.login = async (email, password) => {
+    _cachedUser = null; // Invalidate cache on new login attempt
     const res = await fetch('/api/auth/login', {
       method: 'POST',
       credentials: 'include',

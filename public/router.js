@@ -139,22 +139,28 @@ function scrollToCurrentHash() {
 }
 
 document.addEventListener('click', (event) => {
-  const explicit = event.target.closest('[data-route]');
+  const target = event.target;
+  const explicit = target.closest('[data-route]');
+  
   if (explicit) {
+    // Check if it's a link or button that shouldn't be intercepted (e.g., delete buttons)
+    if (target.closest('.vv-delete-product, .vv-delete-slot, .vv-remove-item')) return;
+    
     event.preventDefault();
     navigate(explicit.dataset.route);
     return;
   }
 
-  const link = event.target.closest('.link, .nav-bar .logo, .bottom-nav .b, .btn, .pcard');
+  const link = target.closest('.link, .nav-bar .logo, .bottom-nav .b, .btn, .pcard');
   if (!link) return;
 
-  // Never intercept submit buttons inside forms — let the form's submit handler run
+  // NEVER intercept submit buttons inside forms — let the form's submit handler run
   if ((link.type === 'submit' || link.getAttribute('type') === 'submit') && link.closest('form')) return;
 
   const text = (link.textContent || '').trim().toLowerCase();
 
-  if (link.classList.contains('pcard') && !event.target.closest('.btn')) {
+  // Handle product cards specifically
+  if (link.classList.contains('pcard') && !target.closest('.btn')) {
     const id = link.dataset.id;
     if (id && /^\d+$/.test(id)) {
       event.preventDefault();
@@ -163,22 +169,26 @@ document.addEventListener('click', (event) => {
     return;
   }
 
+  // Narrow fallback routes - only handle key navigation labels
   const routes = [
     [/^vv|veggie ville|home$/, '/'],
-    [/browse|browse products/, '/browse'],
-    [/sell|become a seller|seller dashboard/, '/seller'],
-    [/how it works/, '/#how-it-works'],
-    [/create account|register/, '/register'],
-    [/login/, '/login'],
-    [/cart|checkout|proceed to checkout/, '/cart'],
-    [/orders|my orders/, '/orders'],
-    [/admin|overview|manage users|view all orders/, '/admin'],
-    [/pickup slots|manage pickup slots/, '/pickup-slots'],
-    [/add new listing|\+ add new listing|new listing/, '/listing']
+    [/^browse$|^browse products$/, '/browse'],
+    [/^sell$|^become a seller$|^seller dashboard$/, '/seller'],
+    [/^how it works$/, '/#how-it-works'],
+    [/^create account$|^register$/, '/register'],
+    [/^login$/, '/login'],
+    [/^cart$|^checkout$|^proceed to checkout$/, '/cart'],
+    [/^orders$|^my orders$/, '/orders'],
+    [/^admin$|^overview$|^manage users$|^view all orders$/, '/admin'],
+    [/^pickup slots$|^manage pickup slots$/, '/pickup-slots'],
+    [/^add new listing$|^\+ add new listing$|^new listing$/, '/listing']
   ];
+  
   for (const [pattern, path] of routes) {
     if (pattern.test(text) || (link.classList.contains('logo') && path === '/')) {
-      if (/^add$|add to cart|save listing|create slot|delete|remove|place order/i.test(text)) return;
+      // Guard against action buttons that happen to have labels like "Add" or "Save"
+      if (/^add$|^add to cart$|^save listing$|^create slot|^delete|^remove|^place order/i.test(text)) return;
+      
       event.preventDefault();
       navigate(path);
       return;
@@ -373,9 +383,9 @@ function bindCatalogFilters() {
   const sidePanel = document.querySelector('.page-desktop .side-panel');
   if (sidePanel && !sidePanel.dataset.bound) {
     sidePanel.dataset.bound = 'true';
-    sidePanel.addEventListener('change', async (e) => {
-      if (!e.target.matches('.vv-filter-input')) return;
-      
+    
+    let debounceTimer;
+    const triggerSearch = async () => {
       const next = { ..._catalogFilters };
       const cat = sidePanel.querySelector('input[name="vv-category"]:checked')?.value;
       const size = sidePanel.querySelector('input[name="vv-size"]:checked')?.value;
@@ -390,6 +400,12 @@ function bindCatalogFilters() {
       if (exp) next.expDanger = 'true'; else delete next.expDanger;
 
       await bindProducts('p2', next, 1);
+    };
+
+    sidePanel.addEventListener('change', async (e) => {
+      if (!e.target.matches('.vv-filter-input')) return;
+      clearTimeout(debounceTimer);
+      triggerSearch();
     });
 
     sidePanel.addEventListener('input', (e) => {
@@ -403,6 +419,9 @@ function bindCatalogFilters() {
         const maxLabel = sidePanel.querySelector('.vv-max-price');
         if (minLabel) minLabel.textContent = min.value;
         if (maxLabel) maxLabel.textContent = max.value;
+        
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(triggerSearch, 400);
       }
     });
   }
@@ -877,17 +896,19 @@ async function bindSellerDashboard() {
         
         const label = item.textContent.trim().toLowerCase();
         if (label === 'dashboard' || label === 'my listings') {
-          navigate('/seller', true);
-        } else if (label === 'orders') {
-          // If we are currently in settings view, the table is gone. 
-          // We need to restore the structure by navigating back to /seller first.
           if (!document.querySelector('.page-desktop tbody, .page-phone .stack-12')) {
             await navigate('/seller', true);
           }
-          // Find and click the Orders tab
-          const ordersTab = [...document.querySelectorAll('.page-phone .tabs .t, .page-desktop .tabs .t')]
-            .find(t => /orders received/i.test(t.textContent));
-          if (ordersTab) ordersTab.click();
+          document.querySelectorAll('.page-phone .tabs .t, .page-desktop .tabs .t').forEach(t => {
+            if (/my listings/i.test(t.textContent)) t.click();
+          });
+        } else if (label === 'orders') {
+          if (!document.querySelector('.page-desktop tbody, .page-phone .stack-12')) {
+            await navigate('/seller', true);
+          }
+          document.querySelectorAll('.page-phone .tabs .t, .page-desktop .tabs .t').forEach(t => {
+            if (/orders received/i.test(t.textContent)) t.click();
+          });
         } else if (label === 'settings') {
           const content = document.querySelector('.page-desktop tbody')?.closest('table') || document.querySelector('.page-desktop .stack-12');
           if (content) {
