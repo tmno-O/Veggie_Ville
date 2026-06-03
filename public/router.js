@@ -926,6 +926,17 @@ async function bindAccountState() {
         avatar.hidden = false;
         avatar.style.display = 'flex';
         avatar.textContent = initials;
+        avatar.style.cursor = 'pointer';
+        avatar.title = `${me.name || me.email} (${me.role}) — click to go to dashboard`;
+
+        const existingHandler = avatar._vvClickHandler;
+        if (existingHandler) avatar.removeEventListener('click', existingHandler);
+        const clickHandler = () => {
+          if (me.role === 'seller' || me.role === 'admin') navigate('/seller');
+          else navigate('/orders');
+        };
+        avatar._vvClickHandler = clickHandler;
+        avatar.addEventListener('click', clickHandler);
       } else {
         avatar.hidden = true;
         avatar.style.display = 'none';

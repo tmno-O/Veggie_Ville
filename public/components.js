@@ -223,8 +223,8 @@
             <h1 style="font-size:52px;font-weight:800;color:#0A3D20;line-height:1.1;letter-spacing:-0.03em;margin:0 0 18px">Fresh from your<br><span style="color:#2E9E60">neighbors</span></h1>
             <p style="font-size:17px;color:#3B3936;line-height:1.65;max-width:440px;margin:0 0 32px">Buy, sell and swap home-grown vegetables, fruits, herbs, honey, and eggs — right in your community.</p>
             <div style="display:flex;gap:12px;flex-wrap:wrap">
-              <button class="vv-btn" style="font-size:16px;height:50px;padding:0 28px">Browse Listings</button>
-              <button class="vv-btn vv-btn-outline" style="font-size:16px;height:50px;padding:0 28px">Start Selling</button>
+              <button class="btn" style="font-size:16px;height:50px;padding:0 28px">Browse Listings</button>
+              <button class="btn ghost" style="font-size:16px;height:50px;padding:0 28px">Start Selling</button>
             </div>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
