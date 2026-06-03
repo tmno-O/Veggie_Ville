@@ -218,13 +218,13 @@ function renderPagination(totalPages, currentPage, filters) {
 
   paginationRow.innerHTML = pages.map(p => {
     const isActive = p === currentPage;
-    return `<span class="tag" style="${isActive ? 'background:#111;color:#fff;' : ''}cursor:pointer" data-page="${p}">${p}</span>`;
+    return `<span class="tag vv-page-btn" style="${isActive ? 'background:#111;color:#fff;' : ''}" data-page="${p}">${p}</span>`;
   }).join('');
 
   paginationRow.insertAdjacentHTML('afterbegin',
-    `<span class="tag" style="cursor:pointer" data-page="${Math.max(1, currentPage - 1)}">‹</span>`);
+    `<span class="tag vv-page-btn" data-page="${Math.max(1, currentPage - 1)}">‹</span>`);
   paginationRow.insertAdjacentHTML('beforeend',
-    `<span class="tag" style="cursor:pointer" data-page="${Math.min(totalPages, currentPage + 1)}">›</span>`);
+    `<span class="tag vv-page-btn" data-page="${Math.min(totalPages, currentPage + 1)}">›</span>`);
 
   paginationRow.querySelectorAll('[data-page]').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -247,39 +247,74 @@ function bindCatalogFilters(filters={}) {
     </form>`;
   const mobileHost = document.querySelector('.page-phone .surface.muted');
   const desktopHost = document.querySelector('.page-desktop [style*="flex:1;padding:24px"]');
-  if (mobileHost) mobileHost.innerHTML = filterHtml;
-  if (desktopHost && !desktopHost.querySelector('.vv-filter-form')) desktopHost.insertAdjacentHTML('afterbegin', filterHtml);
-  document.querySelectorAll('.vv-filter-form').forEach(form => form.addEventListener('submit', async e => {
-    e.preventDefault();
-    const next = Object.fromEntries([...new FormData(form)].filter(([,v]) => v !== ''));
-    await bindProducts('p2', next);
-  }));
+  const applyFormFilters = async (form) => {
+    const next = Object.fromEntries([...new FormData(form)].filter(([, v]) => v !== ''));
+    await bindProducts('p2', next, 1);
+  };
+
+  if (mobileHost) {
+    mobileHost.innerHTML = filterHtml;
+    const form = mobileHost.querySelector('.vv-filter-form');
+    if (form) {
+      form.addEventListener('submit', async e => { e.preventDefault(); await applyFormFilters(form); });
+      form.querySelectorAll('input, select').forEach(el => el.addEventListener('change', () => applyFormFilters(form)));
+    }
+  }
+  if (desktopHost && !desktopHost.querySelector('.vv-filter-form')) {
+    desktopHost.insertAdjacentHTML('afterbegin', filterHtml);
+    const form = desktopHost.querySelector('.vv-filter-form');
+    if (form && !form.dataset.bound) {
+      form.dataset.bound = 'true';
+      form.addEventListener('submit', async e => { e.preventDefault(); await applyFormFilters(form); });
+      form.querySelectorAll('input, select').forEach(el => el.addEventListener('change', () => applyFormFilters(form)));
+    }
+  }
 
   const sidePanel = document.querySelector('.page-desktop .side-panel');
-  if (sidePanel && !sidePanel.dataset.bound) {
+  if (sidePanel && sidePanel.querySelector('.vv-filter-input') && !sidePanel.dataset.bound) {
     sidePanel.dataset.bound = 'true';
-    sidePanel.querySelectorAll('.check').forEach(check => { check.style.cursor = 'pointer'; });
-    sidePanel.addEventListener('click', async (e) => {
-      const check = e.target.closest('.check');
-      if (!check) return;
-      const isSize = !!e.target.closest('.side-panel .row');
-      if (!isSize) {
-        sidePanel.querySelectorAll('.check').forEach(c => {
-          if (!c.closest('.row')) c.classList.remove('on');
-        });
-        check.classList.add('on');
-        const cat = check.textContent.trim();
-        await bindProducts('p2', cat.toLowerCase() === 'all' ? {} : { category: cat }, 1);
-      } else {
+    const applySideFilters = async () => {
+      const next = {};
+      const cat = sidePanel.querySelector('input[name="vv-category"]:checked');
+      const size = sidePanel.querySelector('input[name="vv-size"]:checked');
+      const min = sidePanel.querySelector('input[name="minPrice"]');
+      const max = sidePanel.querySelector('input[name="maxPrice"]');
+      const exp = sidePanel.querySelector('input[name="vv-exp"]:checked');
+      if (cat && cat.value) next.category = cat.value;
+      if (size && size.value) next.size = size.value;
+      if (min && Number(min.value) > 0) next.minPrice = min.value;
+      if (max && Number(max.value) < 500) next.maxPrice = max.value;
+      if (exp && exp.value) next.expDanger = exp.value;
+      const minLabel = sidePanel.querySelector('.vv-min-price');
+      const maxLabel = sidePanel.querySelector('.vv-max-price');
+      if (minLabel) minLabel.textContent = min ? min.value : '0';
+      if (maxLabel) maxLabel.textContent = max ? max.value : '500';
+      await bindProducts('p2', next, 1);
+    };
+    sidePanel.addEventListener('change', async (e) => {
+      if (!e.target.matches('.vv-filter-input')) return;
+      if (e.target.name === 'vv-category') {
+        sidePanel.querySelectorAll('.check').forEach(c => { if (!c.closest('.row')) c.classList.remove('on'); });
+        e.target.closest('.check')?.classList.add('on');
+      }
+      if (e.target.name === 'vv-size') {
         sidePanel.querySelectorAll('.row .check').forEach(c => c.classList.remove('on'));
-        check.classList.add('on');
-        const size = check.textContent.trim();
-        const activeCat = Array.from(sidePanel.querySelectorAll('.check.on'))
-          .find(c => !c.closest('.row'))?.textContent.trim() || 'All';
-        const next = {};
-        if (activeCat.toLowerCase() !== 'all') next.category = activeCat;
-        if (['S','M','L','XL'].includes(size)) next.size = size;
-        await bindProducts('p2', next, 1);
+        e.target.closest('.check')?.classList.add('on');
+      }
+      if (e.target.name === 'vv-exp') {
+        if (e.target.checked) e.target.closest('.check')?.classList.add('on');
+        else e.target.closest('.check')?.classList.remove('on');
+      }
+      await applySideFilters();
+    });
+    sidePanel.addEventListener('input', (e) => {
+      if (e.target.type === 'range') {
+        const min = sidePanel.querySelector('input[name="minPrice"]');
+        const max = sidePanel.querySelector('input[name="maxPrice"]');
+        const minLabel = sidePanel.querySelector('.vv-min-price');
+        const maxLabel = sidePanel.querySelector('.vv-max-price');
+        if (minLabel) minLabel.textContent = min ? min.value : '0';
+        if (maxLabel) maxLabel.textContent = max ? max.value : '500';
       }
     });
   }
@@ -291,23 +326,55 @@ window.VVLoadProducts = async (filters={}) => {
 };
 
 async function bindProductDetail(productId) {
-  if (!productId) return;
+  const id = productId || pageRoute(window.location.pathname).params.productId;
+  if (!id) return;
   try {
-    const p = await request(`/api/products/${encodeURIComponent(productId)}`);
+    const p = await request(`/api/products/${encodeURIComponent(id)}`);
     document.querySelectorAll('.page-phone, .page-desktop').forEach(container => {
-      const img = container.querySelector('.img-ph');
-      const title = container.querySelector('.h1');
-      const price = container.querySelector('.price');
-      if (img) img.textContent = '';
-      if (title) title.textContent = p.name;
+      const title = container.querySelector('.vv-product-title');
+      const price = container.querySelector('.vv-product-price');
+      const img = container.querySelector('.vv-product-hero');
+      const desc = container.querySelector('.vv-product-desc');
+      if (title) title.textContent = p.name || '';
       if (price) price.innerHTML = `${money(p.price)} <span class="small">/ item</span>`;
-      const tag = container.querySelector('.tag');
-      if (tag) tag.textContent = `Best before ${dateOnly(p.best_before)}`;
+      if (img) {
+        img.alt = p.name || '';
+        if (p.image_url) img.src = p.image_url;
+        else img.removeAttribute('src');
+      }
+      if (desc) desc.textContent = p.description || 'No description provided.';
+      const size = container.querySelector('.vv-product-size');
+      if (size) size.textContent = p.size || '';
+      const expiry = container.querySelector('.vv-product-expiry');
+      if (expiry) expiry.textContent = `⏳ Best before ${dateOnly(p.best_before)}`;
+      const stock = container.querySelector('.vv-product-stock');
+      if (stock) stock.textContent = `Stock: ${p.quantity ?? 0}`;
+      const sellerName = container.querySelector('.vv-seller-name');
+      if (sellerName) sellerName.textContent = p.seller_name;
+      const sellerMeta = container.querySelector('.vv-seller-meta');
+      if (sellerMeta) sellerMeta.textContent = `★ ${p.rating} · ${p.review_count} reviews`;
       const add = Array.from(container.querySelectorAll('.btn')).find(btn => /add/i.test(btn.textContent || ''));
       if (add) {
         add.dataset.productId = p.id;
         add.textContent = 'Add to Cart';
       }
+    });
+    document.title = `Veggie Ville - ${p.name || 'Product Detail'}`;
+    const allProducts = await request('/api/products');
+    const more = (Array.isArray(allProducts) ? allProducts : (allProducts.items || []))
+      .filter(r => r.seller_id === p.seller_id && r.id !== p.id)
+      .slice(0, 4);
+    document.querySelectorAll('.page-phone .vv-scroll-x').forEach(el => {
+      el.innerHTML = more.map(r => `<div style="min-width:140px">${window.productCard({
+        id: r.id, name: r.name, size: r.size,
+        price: money(r.price), exp: dateOnly(r.best_before), category: r.category, addBtn: false
+      })}</div>`).join('');
+    });
+    document.querySelectorAll('.page-desktop .grid-4').forEach(el => {
+      el.innerHTML = more.map(r => window.productCard({
+        id: r.id, name: r.name, size: r.size,
+        price: money(r.price), exp: dateOnly(r.best_before), category: r.category
+      })).join('');
     });
   } catch (err) {
     showInlineError('Unable to load product: ' + err.message);
@@ -710,8 +777,7 @@ async function bindAccountState() {
 }
 
 function showInlineError(message) {
-  const host = contentRoot.querySelector('.page-content') || contentRoot;
-  host.insertAdjacentHTML('afterbegin', `<div class="callout error" style="margin:12px"><span class="pin">!</span><div>${esc(message)}</div></div>`);
+  window.VVErrorBanner.show(message);
 }
 
 function showModalError(title, message) {

@@ -55,6 +55,7 @@ async function loadApp({ route = '/', role = null, fetchImpl = null } = {}) {
 
   eval(read('public/components.js'));
   eval(read('public/modal.js'));
+  eval(read('public/error-banner.js'));
   eval(read('public/veggie-ui.js'));
   eval(read('public/router.js'));
   await new Promise(resolve => setTimeout(resolve, 40));

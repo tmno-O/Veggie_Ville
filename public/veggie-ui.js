@@ -128,7 +128,8 @@
       // revert optimistic update if any
       cartCount = Math.max(0, Number(lsGet('vv_cart', '0')||0)); renderCartBadge();
       // show focus-trapped modal for important failure
-      window.VVModal && window.VVModal.openModal ? window.VVModal.openModal(`<div style="font-weight:700;margin-bottom:8px">Failed to add to cart</div><div style="color:#333;margin-bottom:8px">${esc(err.message||err)}</div>`) : alert('Failed to add to cart: '+esc(err.message||err));
+      const msg = /Unauthorized/i.test(err.message) ? 'Please log in to add items.' : (err.message||err);
+      window.VVModal && window.VVModal.openModal ? window.VVModal.openModal(`<div style="font-weight:700;margin-bottom:8px">Failed to add to cart</div><div style="color:#333;margin-bottom:8px">${esc(msg)}</div>`) : alert('Failed to add to cart: '+esc(msg));
       console.error('Add to cart error', err);
     }
   }
@@ -244,6 +245,60 @@ document.addEventListener('click', e => {
     if (ic && (ic.textContent||'').includes('🛒')) {
       e.preventDefault();
       toggleCart();
+    }
+  });
+
+  // ---------- Nav drawer (hamburger menu) ----------
+  function createNavDrawer(){
+    let d = document.querySelector('.vv-nav-drawer');
+    if(d) return d;
+    const overlay = document.createElement('div');
+    overlay.className = 'vv-nav-overlay';
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', toggleNavDrawer);
+
+    d = document.createElement('aside');
+    d.className = 'vv-nav-drawer';
+    d.setAttribute('aria-hidden','true');
+    d.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><b style="font-size:16px;color:var(--vv-green-900)">Veggie Ville</b><button class="vv-nav-close" aria-label="Close menu">✕</button></div>
+      <nav style="display:flex;flex-direction:column;gap:4px">
+        <a class="vv-nav-link" data-route="/" style="padding:10px 8px;border-radius:6px;text-decoration:none;font-size:13px;color:var(--ink)">🏠 Home</a>
+        <a class="vv-nav-link" data-route="/browse" style="padding:10px 8px;border-radius:6px;text-decoration:none;font-size:13px;color:var(--ink)">🥬 Browse Products</a>
+        <a class="vv-nav-link" data-route="/cart" style="padding:10px 8px;border-radius:6px;text-decoration:none;font-size:13px;color:var(--ink)">🛒 Cart</a>
+        <a class="vv-nav-link" data-route="/orders" style="padding:10px 8px;border-radius:6px;text-decoration:none;font-size:13px;color:var(--ink)">📦 My Orders</a>
+        <a class="vv-nav-link" data-route="/seller" style="padding:10px 8px;border-radius:6px;text-decoration:none;font-size:13px;color:var(--ink)">🌱 Seller Dashboard</a>
+        <a class="vv-nav-link" data-route="/login" style="padding:10px 8px;border-radius:6px;text-decoration:none;font-size:13px;color:var(--ink)">🔑 Login</a>
+      </nav>`;
+    document.body.appendChild(d);
+    d.querySelector('.vv-nav-close').addEventListener('click', toggleNavDrawer);
+    d.querySelectorAll('.vv-nav-link').forEach(link => {
+      link.addEventListener('click', e => {
+        e.preventDefault();
+        toggleNavDrawer();
+        if(window.VVNavigate) window.VVNavigate(link.dataset.route);
+      });
+    });
+    return d;
+  }
+
+  function toggleNavDrawer(){
+    const d = createNavDrawer();
+    const overlay = document.querySelector('.vv-nav-overlay');
+    const open = d.classList.contains('open');
+    if(open){
+      d.classList.remove('open'); d.setAttribute('aria-hidden','true');
+      if(overlay) overlay.classList.remove('open');
+    } else {
+      d.classList.add('open'); d.setAttribute('aria-hidden','false');
+      if(overlay) overlay.classList.add('open');
+    }
+  }
+
+  document.addEventListener('click', e => {
+    const hamburger = e.target.closest('.nav-bar .icon[title="hamburger"]');
+    if(hamburger){
+      e.preventDefault();
+      toggleNavDrawer();
     }
   });
   // try fetch cart on load

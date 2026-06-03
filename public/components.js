@@ -225,23 +225,27 @@
       <div style="display:flex">
         <aside class="side-panel">
           <h4>Category</h4>
-          <div class="check on"><span class="box"></span>All</div>
-          <div class="check"><span class="box"></span>Vegetable</div>
-          <div class="check"><span class="box"></span>Fruit</div>
-          <div class="check"><span class="box"></span>Herb</div>
-          <div class="check"><span class="box"></span>Honey</div>
-          <div class="check"><span class="box"></span>Egg</div>
+          <label class="check on"><input type="radio" name="vv-category" value="" class="vv-filter-input" checked><span class="box"></span>All</label>
+          <label class="check"><input type="radio" name="vv-category" value="Vegetable" class="vv-filter-input"><span class="box"></span>Vegetable</label>
+          <label class="check"><input type="radio" name="vv-category" value="Fruit" class="vv-filter-input"><span class="box"></span>Fruit</label>
+          <label class="check"><input type="radio" name="vv-category" value="Herb" class="vv-filter-input"><span class="box"></span>Herb</label>
+          <label class="check"><input type="radio" name="vv-category" value="Honey" class="vv-filter-input"><span class="box"></span>Honey</label>
+          <label class="check"><input type="radio" name="vv-category" value="Egg" class="vv-filter-input"><span class="box"></span>Egg</label>
           <h4>Size</h4>
-          <div class="row"><span class="check"><span class="box"></span>S</span><span class="check on"><span class="box"></span>M</span><span class="check"><span class="box"></span>L</span><span class="check"><span class="box"></span>XL</span></div>
+          <div class="row">
+            <label class="check"><input type="radio" name="vv-size" value="S" class="vv-filter-input"><span class="box"></span>S</label>
+            <label class="check on"><input type="radio" name="vv-size" value="M" class="vv-filter-input" checked><span class="box"></span>M</label>
+            <label class="check"><input type="radio" name="vv-size" value="L" class="vv-filter-input"><span class="box"></span>L</label>
+            <label class="check"><input type="radio" name="vv-size" value="XL" class="vv-filter-input"><span class="box"></span>XL</label>
+          </div>
           <h4>Price range</h4>
           <div class="slider">
-            <div class="small mono">฿0 — ฿500</div>
-            <div class="track" style="position:relative">
-              <div class="thumb" style="left:18%"></div><div class="thumb" style="left:62%"></div>
-            </div>
+            <div class="small mono">฿<span class="vv-min-price">0</span> — ฿<span class="vv-max-price">500</span></div>
+            <input type="range" name="minPrice" class="vv-filter-input" min="0" max="500" value="0" style="width:100%">
+            <input type="range" name="maxPrice" class="vv-filter-input" min="0" max="500" value="500" style="width:100%">
           </div>
           <h4>Best before</h4>
-          <div class="check"><span class="box"></span>Show expiring soon (&lt;7d)</div>
+          <label class="check"><input type="checkbox" name="vv-exp" value="true" class="vv-filter-input"><span class="box"></span>Show expiring soon (&lt;7d)</label>
         </aside>
         <div style="flex:1;padding:24px">
           <div class="row between" style="margin-bottom:12px">
@@ -262,7 +266,7 @@
             ${productCard({name:'Green tomato',size:'M',exp:'2026-06-12',price:'฿70'})}
           </div>
           <div class="row" style="justify-content:center;margin-top:16px">
-            <span class="tag">‹</span><span class="tag" style="background:#111;color:#fff">1</span><span class="tag">2</span><span class="tag">3</span><span class="tag">…</span><span class="tag">›</span>
+            <span class="tag vv-page-btn">‹</span><span class="tag vv-page-btn" style="background:#111;color:#fff">1</span><span class="tag vv-page-btn">2</span><span class="tag vv-page-btn">3</span><span class="tag vv-page-btn">…</span><span class="tag vv-page-btn">›</span>
           </div>
           <div style="margin-top:16px">${api('GET /api/products?category=vegetable&amp;size=M&amp;min=0&amp;max=500&amp;keyword=tomato&amp;sort=newest&amp;page=2')}</div>
         </div>
@@ -277,22 +281,22 @@
     apis:'GET /api/products/:id · GET /api/products?seller_id=&exclude=:id',
     mobile:`
       ${navBarMobile}
-      <div class="img-ph"></div>
+      <img class="img-ph vv-product-hero" src="" alt="">
       <div class="stack-8">
-        <div class="h1">Heirloom tomato — Sungold</div>
-        <div class="row" style="gap:6px"><span class="badge">M</span><span class="tag">⏳ Best before 2026-06-02</span></div>
-        <div class="price">฿180 <span class="small">/ 500g</span></div>
+        <div class="h1 vv-product-title"></div>
+        <div class="row" style="gap:6px"><span class="badge vv-product-size"></span><span class="tag vv-product-expiry"></span></div>
+        <div class="price vv-product-price"></div>
         <div class="row" style="gap:8px">
           <div class="avatar"></div>
           <div>
-            <div class="small" style="font-weight:600;color:var(--ink)">Ploy's Backyard Garden</div>
-            <div class="small mono">★ 4.8 · 38 reviews</div>
+            <div class="small vv-seller-name" style="font-weight:600;color:var(--ink)">Ploy's Backyard Garden</div>
+            <div class="small mono vv-seller-meta">★ 4.8 · 38 reviews</div>
           </div>
         </div>
-        <div class="text-lines"><i></i><i></i><i></i></div>
+        <div class="text-lines vv-product-desc"></div>
         <div class="row" style="gap:12px">
           <div class="qty"><span>−</span><span class="n">1</span><span>+</span></div>
-          <span class="small mono">Stock: 12</span>
+          <span class="small mono vv-product-stock"></span>
         </div>
       </div>
       <div class="hr"></div>
@@ -302,7 +306,7 @@
         <div style="min-width:140px">${productCard({name:'Basil',size:'S',price:'฿45',exp:'2026-05-30',addBtn:false})}</div>
         <div style="min-width:140px">${productCard({name:'Mint',size:'S',price:'฿30',exp:'2026-05-22',addBtn:false,expDanger:true})}</div>
       </div>
-      ${api('GET /api/products/42')}
+      ${api('GET /api/products/:id')}
       <div style="position:sticky;bottom:0;background:#fff;padding-top:12px;border-top:1px solid var(--line);margin:0 -16px;padding:12px 16px">
         <button class="btn full">Add to Cart</button>
       </div>
@@ -313,7 +317,7 @@
         <div class="row small mono" style="color:var(--ink-3);margin-bottom:12px">Home / Vegetable / Tomato / Heirloom — Sungold</div>
         <div style="display:grid;grid-template-columns:60% 40%;gap:32px">
           <div>
-            <div class="img-ph" style="aspect-ratio:4/3"></div>
+            <img class="img-ph vv-product-hero" style="aspect-ratio:4/3;width:100%;object-fit:cover" src="" alt="">
             <div class="row" style="margin-top:12px;gap:8px">
               <div class="img-ph" style="width:80px;aspect-ratio:1/1"></div>
               <div class="img-ph" style="width:80px;aspect-ratio:1/1"></div>
@@ -323,22 +327,22 @@
           </div>
           <div class="stack-12">
             <div>
-              <div class="h1" style="font-size:28px">Heirloom tomato — Sungold</div>
-              <div class="row" style="gap:6px;margin-top:6px"><span class="badge">M</span><span class="tag">⏳ Best before 2026-06-02</span></div>
+              <div class="h1 vv-product-title" style="font-size:28px"></div>
+              <div class="row" style="gap:6px;margin-top:6px"><span class="badge vv-product-size"></span><span class="tag vv-product-expiry"></span></div>
             </div>
-            <div class="price" style="font-size:32px">฿180 <span class="small" style="font-weight:400">/ 500g</span></div>
+            <div class="price vv-product-price" style="font-size:32px"></div>
             <div class="surface" style="display:flex;gap:10px;align-items:center">
               <div class="avatar" style="width:36px;height:36px"></div>
               <div>
-                <div style="font-weight:600">Ploy's Backyard Garden</div>
-                <div class="small mono">★ 4.8 · 38 reviews · Bangkok 10110</div>
+                <div class="vv-seller-name" style="font-weight:600">Ploy's Backyard Garden</div>
+                <div class="small mono vv-seller-meta">★ 4.8 · 38 reviews · Bangkok 10110</div>
               </div>
               <button class="btn ghost sm" style="margin-left:auto">View profile</button>
             </div>
-            <div class="text-lines"><i></i><i></i><i></i><i></i></div>
-            <div class="row" style="gap:12px"><div class="qty"><span>−</span><span class="n">1</span><span>+</span></div><span class="small mono">Stock: 12</span></div>
+            <div class="text-lines vv-product-desc"></div>
+            <div class="row" style="gap:12px"><div class="qty"><span>−</span><span class="n">1</span><span>+</span></div><span class="small mono vv-product-stock"></span></div>
             <div class="row" style="gap:8px"><button class="btn">Add to Cart</button><button class="btn ghost">♡ Save to wishlist</button></div>
-            ${api('GET /api/products/42')}
+            ${api('GET /api/products/:id')}
           </div>
         </div>
         <div style="margin-top:32px">
@@ -377,28 +381,21 @@
       ${callout('Email must be unique; bcrypt-hash password before storing in MySQL.','⚡ Unique email + password hash')}
     `,
     desktop:`
-      ${navBarDesktopAdmin.replace('Admin Console','Veggie Ville').replace('<span class="badge" style="margin-left:8px">👑 ADMIN</span>','')}
-      <div class="vv-grid-hero">
-        <div class="vv-hero-left">
-          <div class="img-ph banner" style="aspect-ratio:4/3;max-width:480px"></div>
-          <div class="h1" style="font-size:28px;max-width:420px">Join your neighborhood's garden share.</div>
-          <div class="small" style="max-width:420px">Sell your harvest, find fresh produce within walking distance.</div>
-        </div>
-        <div class="vv-hero-right">
-          <div class="surface stack-12 vv-max-420">
-            <div class="h1">Create account</div>
-            <div class="input"><label>Full name *</label><div class="field">Somchai Jaidee</div></div>
-            <div class="input ok"><label>Email *</label><div class="field">somchai@example.com</div></div>
-            <div class="grid-2">
-              <div class="input"><label>Password *</label><div class="field">••••••••</div></div>
-              <div class="input error"><label>Confirm *</label><div class="field">••••••</div><div class="help" style="color:var(--error)">Mismatch</div></div>
-            </div>
-            <div class="input"><label>I am a *</label><div class="select">Buyer</div></div>
-            <button class="btn full">Create account</button>
-            <div class="small" style="text-align:center;color:var(--ink-3)">— or —</div>
-            <div class="small vv-center">Already have an account? <b>Login</b></div>
-            ${api('POST /api/auth/register')}
+      ${navBarDesktop}
+      <div class="vv-auth-viewport">
+        <div class="surface stack-12 vv-max-420">
+          <div class="h1">Create account</div>
+          <div class="input"><label>Full name *</label><div class="field">Somchai Jaidee</div></div>
+          <div class="input ok"><label>Email *</label><div class="field">somchai@example.com</div></div>
+          <div class="grid-2">
+            <div class="input"><label>Password *</label><div class="field">••••••••</div></div>
+            <div class="input error"><label>Confirm *</label><div class="field">••••••</div><div class="help" style="color:var(--error)">Mismatch</div></div>
           </div>
+          <div class="input"><label>I am a *</label><div class="select">Buyer</div></div>
+          <button class="btn full">Create account</button>
+          <div class="row" style="justify-content:center"><span class="small">— or —</span></div>
+          <div class="small vv-center">Already have an account? <b>Login</b></div>
+          ${api('POST /api/auth/register')}
         </div>
       </div>
       ${footerFull}
@@ -409,34 +406,30 @@
  pages.push({
     id:'p5', name:'Login', auth:'public',
     mobile:`
-      ${navBarMobileLogoOnly}
-      <div class="surface stack-12">
-        <div class="h1">Welcome back</div>
-        <div class="input"><label>Email *</label><input type="email" id="login-email-mobile" class="field" placeholder="somchai@example.com" /></div>
-        <div class="input"><label>Password *</label><input type="password" id="login-pass-mobile" class="field" placeholder="••••" /></div>
-        <span class="small" style="text-align:right;text-decoration:underline;cursor:pointer;display:block" data-route="/login">Forgot password?</span>
-        <button id="btn-submit-login-mobile" class="btn full">Login</button>
-        <div class="small" style="text-align:center;color:var(--ink-3)">— or —</div>
-        <div class="small vv-center">New here? <span data-route="/register" style="font-weight:700;cursor:pointer;text-decoration:underline">Create account</span></div>
+      ${navBarMobile}
+      <div class="vv-auth-viewport">
+        <div class="surface stack-12 vv-max-420">
+          <div class="h1">Welcome back</div>
+          <div class="input"><label>Email *</label><input type="email" id="login-email-mobile" class="field" placeholder="somchai@example.com" /></div>
+          <div class="input"><label>Password *</label><input type="password" id="login-pass-mobile" class="field" placeholder="••••" /></div>
+          <span class="small" style="text-align:right;text-decoration:underline;cursor:pointer;display:block" data-route="/login">Forgot password?</span>
+          <button id="btn-submit-login-mobile" class="btn full">Login</button>
+          <div class="small" style="text-align:center;color:var(--ink-3)">— or —</div>
+          <div class="small vv-center">New here? <span data-route="/register" style="font-weight:700;cursor:pointer;text-decoration:underline">Create account</span></div>
+        </div>
       </div>
     `,
     desktop:`
-      ${navBarMobileLogoOnly}
-      <div class="vv-grid-hero">
-        <div class="vv-hero-left">
-          <div class="img-ph banner" style="aspect-ratio:4/3;max-width:480px"></div>
-          <div class="h1" style="font-size:28px;max-width:420px">Welcome back. Your neighbors have been busy.</div>
-        </div>
-        <div class="vv-hero-right">
-          <div class="surface stack-12 vv-max-420">
-            <div class="h1">Login</div>
-            <div class="input"><label>Email *</label><input type="email" id="login-email-desktop" class="field" placeholder="somchai@example.com" /></div>
-            <div class="input"><label>Password *</label><input type="password" id="login-pass-desktop" class="field" placeholder="••••" /></div>
-            <span class="small" style="text-align:right;text-decoration:underline;cursor:pointer;display:block" data-route="/login">Forgot password?</span>
-            <button id="btn-submit-login-desktop" class="btn full">Login</button>
-            <div class="small" style="text-align:center;color:var(--ink-3)">— or —</div>
-            <div class="small vv-center">New here? <span data-route="/register" style="font-weight:700;cursor:pointer;text-decoration:underline">Create account</span></div>
-          </div>
+      ${navBarDesktop}
+      <div class="vv-auth-viewport">
+        <div class="surface stack-12 vv-max-420">
+          <div class="h1">Login</div>
+          <div class="input"><label>Email *</label><input type="email" id="login-email-desktop" class="field" placeholder="somchai@example.com" /></div>
+          <div class="input"><label>Password *</label><input type="password" id="login-pass-desktop" class="field" placeholder="••••" /></div>
+          <span class="small" style="text-align:right;text-decoration:underline;cursor:pointer;display:block" data-route="/login">Forgot password?</span>
+          <button id="btn-submit-login-desktop" class="btn full">Login</button>
+          <div class="small" style="text-align:center;color:var(--ink-3)">— or —</div>
+          <div class="small vv-center">New here? <span data-route="/register" style="font-weight:700;cursor:pointer;text-decoration:underline">Create account</span></div>
         </div>
       </div>
     `
