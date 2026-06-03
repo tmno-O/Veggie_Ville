@@ -796,6 +796,8 @@ body{
 .vv-modal-content{
   background:#fff !important;
   box-shadow:0 20px 60px rgba(28,25,23,.28) !important;
+  min-width:300px;
+  padding:24px !important;
 }
 .vv-modal-ok,
 .vv-modal-close{

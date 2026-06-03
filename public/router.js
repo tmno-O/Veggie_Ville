@@ -185,24 +185,46 @@ async function bindProducts(pageId, filters={}, page=1) {
     const query = new URLSearchParams({ ...filters, page, limit: CATALOG_PAGE_SIZE });
     const data = await request(`/api/products?${query.toString()}`);
 
-    const products = Array.isArray(data) ? data : (data.items || []);
+    let products = Array.isArray(data) ? data : (data.items || []);
+    const sortSelect = document.querySelector('.vv-sort-select');
+    if (sortSelect) {
+      if (sortSelect.value === 'price_asc') products.sort((a,b) => a.price - b.price);
+      else if (sortSelect.value === 'price_desc') products.sort((a,b) => b.price - a.price);
+      else products.sort((a,b) => b.id - a.id);
+    }
     const total = data.total || products.length;
     const totalPages = Math.max(1, Math.ceil(total / CATALOG_PAGE_SIZE));
 
-    const cards = products.map(p => window.productCard({
+    const renderCards = () => products.length > 0 ? products.map(p => window.productCard({
       id: p.id, name: p.name, size: p.size,
       price: money(p.price), exp: dateOnly(p.best_before), category: p.category
-    })).join('') || '<div class="surface small">No products available.</div>';
+    })).join('') : '<div class="surface small">No products available.</div>';
+
+    const cards = renderCards();
 
     if (pageId === 'p1') {
       document.querySelectorAll('.page-phone .stack-12, .page-desktop .grid-4').forEach(el => { el.innerHTML = cards; });
     } else {
-      bindCatalogFilters(filters);
+      bindCatalogFilters();
       const mobileGrid = document.querySelectorAll('.page-phone .grid-2')[1];
       const desktopGrid = document.querySelector('.page-desktop .grid-3');
       if (mobileGrid) mobileGrid.innerHTML = cards;
       if (desktopGrid) desktopGrid.innerHTML = cards;
       renderPagination(totalPages, page, filters);
+      const resultsCounter = document.querySelector('.vv-results-counter');
+      if (resultsCounter) resultsCounter.textContent = `${products.length} results`;
+
+
+      if (sortSelect) {
+        sortSelect.onchange = () => {
+          if (sortSelect.value === 'price_asc') products.sort((a,b) => a.price - b.price);
+          else if (sortSelect.value === 'price_desc') products.sort((a,b) => b.price - a.price);
+          else products.sort((a,b) => b.id - a.id);
+          const sortedCards = renderCards();
+          if (mobileGrid) mobileGrid.innerHTML = sortedCards;
+          if (desktopGrid) desktopGrid.innerHTML = sortedCards;
+        };
+      }
     }
   } catch (err) {
     showInlineError('Unable to load products: ' + err.message);
@@ -234,42 +256,7 @@ function renderPagination(totalPages, currentPage, filters) {
   });
 }
 
-function bindCatalogFilters(filters={}) {
-  const filterHtml = `
-    <form class="vv-filter-form row" style="flex-wrap:wrap;gap:8px;margin-bottom:12px">
-      <input class="field" name="keyword" placeholder="Search produce" value="${esc(filters.keyword || '')}" style="height:36px;border:1px solid var(--line);border-radius:6px;padding:0 10px">
-      <select class="field" name="category" style="height:36px;border:1px solid var(--line);border-radius:6px"><option value="">All categories</option>${['Vegetable','Fruit','Herb','Honey','Egg'].map(c=>`<option ${filters.category===c?'selected':''}>${c}</option>`).join('')}</select>
-      <select class="field" name="size" style="height:36px;border:1px solid var(--line);border-radius:6px"><option value="">All sizes</option>${['S','M','L','XL'].map(s=>`<option ${filters.size===s?'selected':''}>${s}</option>`).join('')}</select>
-      <input class="field" name="minPrice" type="number" min="0" placeholder="Min" value="${esc(filters.minPrice || '')}" style="width:84px;height:36px;border:1px solid var(--line);border-radius:6px;padding:0 10px">
-      <input class="field" name="maxPrice" type="number" min="0" placeholder="Max" value="${esc(filters.maxPrice || '')}" style="width:84px;height:36px;border:1px solid var(--line);border-radius:6px;padding:0 10px">
-      <button class="btn sm" type="submit">Apply</button>
-      <button class="btn ghost sm" type="button" data-route="/browse">Clear</button>
-    </form>`;
-  const mobileHost = document.querySelector('.page-phone .surface.muted');
-  const desktopHost = document.querySelector('.page-desktop [style*="flex:1;padding:24px"]');
-  const applyFormFilters = async (form) => {
-    const next = Object.fromEntries([...new FormData(form)].filter(([, v]) => v !== ''));
-    await bindProducts('p2', next, 1);
-  };
-
-  if (mobileHost) {
-    mobileHost.innerHTML = filterHtml;
-    const form = mobileHost.querySelector('.vv-filter-form');
-    if (form) {
-      form.addEventListener('submit', async e => { e.preventDefault(); await applyFormFilters(form); });
-      form.querySelectorAll('input, select').forEach(el => el.addEventListener('change', () => applyFormFilters(form)));
-    }
-  }
-  if (desktopHost && !desktopHost.querySelector('.vv-filter-form')) {
-    desktopHost.insertAdjacentHTML('afterbegin', filterHtml);
-    const form = desktopHost.querySelector('.vv-filter-form');
-    if (form && !form.dataset.bound) {
-      form.dataset.bound = 'true';
-      form.addEventListener('submit', async e => { e.preventDefault(); await applyFormFilters(form); });
-      form.querySelectorAll('input, select').forEach(el => el.addEventListener('change', () => applyFormFilters(form)));
-    }
-  }
-
+function bindCatalogFilters() {
   const sidePanel = document.querySelector('.page-desktop .side-panel');
   if (sidePanel && sidePanel.querySelector('.vv-filter-input') && !sidePanel.dataset.bound) {
     sidePanel.dataset.bound = 'true';
@@ -280,11 +267,13 @@ function bindCatalogFilters(filters={}) {
       const min = sidePanel.querySelector('input[name="minPrice"]');
       const max = sidePanel.querySelector('input[name="maxPrice"]');
       const exp = sidePanel.querySelector('input[name="vv-exp"]:checked');
+      const kw = sidePanel.querySelector('input[name="keyword"]');
       if (cat && cat.value) next.category = cat.value;
       if (size && size.value) next.size = size.value;
       if (min && Number(min.value) > 0) next.minPrice = min.value;
       if (max && Number(max.value) < 500) next.maxPrice = max.value;
       if (exp && exp.value) next.expDanger = exp.value;
+      if (kw && kw.value.trim()) next.keyword = kw.value.trim();
       const minLabel = sidePanel.querySelector('.vv-min-price');
       const maxLabel = sidePanel.querySelector('.vv-max-price');
       if (minLabel) minLabel.textContent = min ? min.value : '0';
@@ -307,7 +296,12 @@ function bindCatalogFilters(filters={}) {
       }
       await applySideFilters();
     });
+    let debounceTimer;
     sidePanel.addEventListener('input', (e) => {
+      if (e.target.name === 'keyword') {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(applySideFilters, 300);
+      }
       if (e.target.type === 'range') {
         const min = sidePanel.querySelector('input[name="minPrice"]');
         const max = sidePanel.querySelector('input[name="maxPrice"]');
@@ -317,6 +311,42 @@ function bindCatalogFilters(filters={}) {
         if (maxLabel) maxLabel.textContent = max ? max.value : '500';
       }
     });
+    const clearBtn = sidePanel.querySelector('.vv-clear-filters');
+    if (clearBtn) {
+      clearBtn.addEventListener('click', async () => {
+        const kw = sidePanel.querySelector('input[name="keyword"]');
+        if (kw) kw.value = '';
+        
+        const catAll = sidePanel.querySelector('input[name="vv-category"][value=""]');
+        if (catAll) catAll.checked = true;
+        sidePanel.querySelectorAll('input[name="vv-category"]').forEach(c => {
+          c.closest('.check')?.classList.remove('on');
+        });
+        if (catAll) catAll.closest('.check')?.classList.add('on');
+        
+        sidePanel.querySelectorAll('input[name="vv-size"]').forEach(s => {
+          s.checked = false;
+          s.closest('.check')?.classList.remove('on');
+        });
+        
+        const min = sidePanel.querySelector('input[name="minPrice"]');
+        if (min) min.value = 0;
+        const max = sidePanel.querySelector('input[name="maxPrice"]');
+        if (max) max.value = 500;
+        const minLabel = sidePanel.querySelector('.vv-min-price');
+        const maxLabel = sidePanel.querySelector('.vv-max-price');
+        if (minLabel) minLabel.textContent = '0';
+        if (maxLabel) maxLabel.textContent = '500';
+        
+        const exp = sidePanel.querySelector('input[name="vv-exp"]');
+        if (exp) {
+          exp.checked = false;
+          exp.closest('.check')?.classList.remove('on');
+        }
+        
+        await applySideFilters();
+      });
+    }
   }
 }
 
@@ -385,6 +415,21 @@ function bindLogin() {
   ['mobile', 'desktop'].forEach(layout => {
     const btn = document.getElementById(`btn-submit-login-${layout}`);
     if (!btn) return;
+    
+    const passInput = document.getElementById(`login-pass-${layout}`);
+    const toggleBtn = passInput?.nextElementSibling;
+    if (toggleBtn && toggleBtn.classList.contains('vv-pwd-toggle')) {
+      toggleBtn.addEventListener('click', () => {
+        if (passInput.type === 'password') {
+          passInput.type = 'text';
+          toggleBtn.textContent = 'Hide';
+        } else {
+          passInput.type = 'password';
+          toggleBtn.textContent = 'Show';
+        }
+      });
+    }
+
     btn.addEventListener('click', async (e) => {
       e.preventDefault();
       try {
@@ -394,7 +439,14 @@ function bindLogin() {
         );
         navigate('/');
       } catch (err) {
-        showModalError('Login failed', err.message);
+        let cleanMsg = 'Invalid email or password.';
+        try {
+          const parsed = JSON.parse(err.message);
+          if (parsed && parsed.message) cleanMsg = parsed.message;
+        } catch (e) {
+          cleanMsg = err.message || cleanMsg;
+        }
+        showModalError('Login failed', cleanMsg);
       }
     });
   });
@@ -407,12 +459,26 @@ function bindRegister() {
       <form class="vv-register-form stack-12" data-layout="${idx}">
         <div class="input"><label>Full name *</label><input class="field" name="name" required></div>
         <div class="input"><label>Email *</label><input type="email" class="field" name="email" required></div>
-        <div class="input"><label>Password *</label><input type="password" class="field" name="password" minlength="8" required></div>
+        <div class="input"><label>Password *</label><div style="position:relative;display:flex"><input type="password" class="field" name="password" minlength="8" required style="width:100%;padding-right:44px" /><span class="vv-pwd-toggle small" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;font-weight:600;user-select:none">Show</span></div></div>
         <div class="input"><label>I am a *</label><select class="field" name="role"><option value="buyer">Buyer</option><option value="seller">Seller</option></select></div>
         <button class="btn full" type="submit">Create account</button>
       </form>`;
   });
   document.querySelectorAll('.vv-register-form').forEach(form => {
+    const passInput = form.querySelector('input[name="password"]');
+    const toggleBtn = passInput?.nextElementSibling;
+    if (toggleBtn && toggleBtn.classList.contains('vv-pwd-toggle')) {
+      toggleBtn.addEventListener('click', () => {
+        if (passInput.type === 'password') {
+          passInput.type = 'text';
+          toggleBtn.textContent = 'Hide';
+        } else {
+          passInput.type = 'password';
+          toggleBtn.textContent = 'Show';
+        }
+      });
+    }
+
     form.addEventListener('submit', async e => {
       e.preventDefault();
       const data = Object.fromEntries(new FormData(form));
@@ -422,8 +488,8 @@ function bindRegister() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data)
         });
-        await window.VVAuth.login(data.email, data.password);
-        navigate('/');
+        alert('Registration successful! Please log in.');
+        navigate('/login');
       } catch (err) {
         showModalError('Registration failed', err.message);
       }

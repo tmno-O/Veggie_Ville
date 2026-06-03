@@ -15,11 +15,23 @@ const register = async ({ name, email, password, role = 'buyer' }) => {
   if (existing.length > 0) throw new Error('Email already in use');
 
   const hash = await bcrypt.hash(password, 12);
-  const [result] = await pool.query(
-    'INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)',
-    [name, email, hash, role]
-  );
-  return { id: result.insertId, name, email, role };
+  
+  try {
+    const [result] = await pool.query(
+      'INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)',
+      [name, email, hash, role]
+    );
+
+    if (!result || result.affectedRows === 0) {
+      console.error('[auth.service] SQLite silent failure: 0 rows affected');
+      throw new Error('Database insert failed silently');
+    }
+
+    return { id: result.insertId, name, email, role };
+  } catch (err) {
+    console.error('[auth.service] Registration insert failed:', err);
+    throw new Error('Internal server error during registration');
+  }
 };
 
 /**
@@ -29,7 +41,7 @@ const register = async ({ name, email, password, role = 'buyer' }) => {
  */
 const login = async ({ email, password }) => {
   const [rows] = await pool.query(
-    'SELECT * FROM users WHERE email = ? AND is_active = TRUE',
+    'SELECT * FROM users WHERE email = ? AND is_active = 1',
     [email]
   );
   if (rows.length === 0) throw new Error('Invalid credentials');

@@ -222,8 +222,9 @@
     `,
     desktop:`
       ${navBarDesktop}
-      <div style="display:flex">
+      <div style="display:flex;flex:1">
         <aside class="side-panel">
+          <div class="input"><input type="text" class="field vv-filter-input" name="keyword" placeholder="🔍 Search produce"></div>
           <h4>Category</h4>
           <label class="check on"><input type="radio" name="vv-category" value="" class="vv-filter-input" checked><span class="box"></span>All</label>
           <label class="check"><input type="radio" name="vv-category" value="Vegetable" class="vv-filter-input"><span class="box"></span>Vegetable</label>
@@ -232,7 +233,7 @@
           <label class="check"><input type="radio" name="vv-category" value="Honey" class="vv-filter-input"><span class="box"></span>Honey</label>
           <label class="check"><input type="radio" name="vv-category" value="Egg" class="vv-filter-input"><span class="box"></span>Egg</label>
           <h4>Size</h4>
-          <div class="row">
+          <div class="row" style="flex-wrap:wrap">
             <label class="check"><input type="radio" name="vv-size" value="S" class="vv-filter-input"><span class="box"></span>S</label>
             <label class="check on"><input type="radio" name="vv-size" value="M" class="vv-filter-input" checked><span class="box"></span>M</label>
             <label class="check"><input type="radio" name="vv-size" value="L" class="vv-filter-input"><span class="box"></span>L</label>
@@ -246,16 +247,16 @@
           </div>
           <h4>Best before</h4>
           <label class="check"><input type="checkbox" name="vv-exp" value="true" class="vv-filter-input"><span class="box"></span>Show expiring soon (&lt;7d)</label>
+          <span class="small vv-clear-filters" style="text-decoration:underline;cursor:pointer;margin-top:12px;text-align:center">Clear all</span>
         </aside>
         <div style="flex:1;padding:24px">
           <div class="row between" style="margin-bottom:12px">
-            <div class="input" style="flex:1;max-width:480px"><div class="field">🔍 tomato</div></div>
-            <div class="row"><span class="small mono">24 results</span><div class="select" style="width:200px">Sort: Newest</div></div>
-          </div>
-          <div class="row" style="flex-wrap:wrap;gap:6px;margin-bottom:12px">
-            <span class="tag">Category: Vegetable ✕</span>
-            <span class="tag">Size: M ✕</span>
-            <span class="small" style="text-decoration:underline">Clear all</span>
+            <span class="small mono vv-results-counter">24 results</span>
+            <select class="select vv-sort-select" style="width:200px">
+              <option value="newest">Sort: Newest</option>
+              <option value="price_asc">Price: Low to High</option>
+              <option value="price_desc">Price: High to Low</option>
+            </select>
           </div>
           <div class="grid-3">
             ${productCard({id:109,name:'Tomato',size:'M',exp:'2026-05-20',expDanger:true,price:'฿120',category:'Vegetable'})}
@@ -383,22 +384,30 @@
     desktop:`
       ${navBarDesktop}
       <div class="vv-auth-viewport">
-        <div class="surface stack-12 vv-max-420">
-          <div class="h1">Create account</div>
-          <div class="input"><label>Full name *</label><div class="field">Somchai Jaidee</div></div>
-          <div class="input ok"><label>Email *</label><div class="field">somchai@example.com</div></div>
-          <div class="grid-2">
-            <div class="input"><label>Password *</label><div class="field">••••••••</div></div>
-            <div class="input error"><label>Confirm *</label><div class="field">••••••</div><div class="help" style="color:var(--error)">Mismatch</div></div>
+        <div style="display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:64px; width:100%; max-width:960px">
+          <div style="flex:1 1 400px; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center">
+            <div class="h1" style="font-size:28px">Welcome to Veggie Ville</div>
+            <div style="color:var(--ink-2);margin-top:12px;font-size:15px;line-height:1.6">Fresh, local produce delivered straight from the farm to your table.</div>
           </div>
-          <div class="input"><label>I am a *</label><div class="select">Buyer</div></div>
-          <button class="btn full">Create account</button>
-          <div class="row" style="justify-content:center"><span class="small">— or —</span></div>
-          <div class="small vv-center">Already have an account? <b>Login</b></div>
-          ${api('POST /api/auth/register')}
+          <div style="flex:1 1 400px; display:flex; justify-content:center">
+            <div class="surface stack-12 vv-max-420" style="width:100%">
+              <div class="h1">Create account</div>
+              <div class="input"><label>Full name *</label><div class="field">Somchai Jaidee</div></div>
+              <div class="input ok"><label>Email *</label><div class="field">somchai@example.com</div></div>
+              <div class="grid-2">
+                <div class="input"><label>Password *</label><div class="field">••••••••</div></div>
+                <div class="input error"><label>Confirm *</label><div class="field">••••••</div><div class="help" style="color:var(--error)">Mismatch</div></div>
+              </div>
+              <div class="input"><label>I am a *</label><div class="select">Buyer</div></div>
+              <button class="btn full">Create account</button>
+              <div class="row" style="justify-content:center"><span class="small">— or —</span></div>
+              <div class="small vv-center">Already have an account? <b>Login</b></div>
+              ${api('POST /api/auth/register')}
+            </div>
+          </div>
         </div>
       </div>
-      ${footerFull}
+
     `
   });
 
@@ -411,7 +420,7 @@
         <div class="surface stack-12 vv-max-420">
           <div class="h1">Welcome back</div>
           <div class="input"><label>Email *</label><input type="email" id="login-email-mobile" class="field" placeholder="somchai@example.com" /></div>
-          <div class="input"><label>Password *</label><input type="password" id="login-pass-mobile" class="field" placeholder="••••" /></div>
+          <div class="input"><label>Password *</label><div style="position:relative;display:flex"><input type="password" id="login-pass-mobile" class="field" placeholder="••••" style="width:100%;padding-right:44px" /><span class="vv-pwd-toggle small" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;font-weight:600;user-select:none">Show</span></div></div>
           <span class="small" style="text-align:right;text-decoration:underline;cursor:pointer;display:block" data-route="/login">Forgot password?</span>
           <button id="btn-submit-login-mobile" class="btn full">Login</button>
           <div class="small" style="text-align:center;color:var(--ink-3)">— or —</div>
@@ -422,14 +431,22 @@
     desktop:`
       ${navBarDesktop}
       <div class="vv-auth-viewport">
-        <div class="surface stack-12 vv-max-420">
-          <div class="h1">Login</div>
-          <div class="input"><label>Email *</label><input type="email" id="login-email-desktop" class="field" placeholder="somchai@example.com" /></div>
-          <div class="input"><label>Password *</label><input type="password" id="login-pass-desktop" class="field" placeholder="••••" /></div>
-          <span class="small" style="text-align:right;text-decoration:underline;cursor:pointer;display:block" data-route="/login">Forgot password?</span>
-          <button id="btn-submit-login-desktop" class="btn full">Login</button>
-          <div class="small" style="text-align:center;color:var(--ink-3)">— or —</div>
-          <div class="small vv-center">New here? <span data-route="/register" style="font-weight:700;cursor:pointer;text-decoration:underline">Create account</span></div>
+        <div style="display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:64px; width:100%; max-width:960px">
+          <div style="flex:1 1 400px; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center">
+            <div class="h1" style="font-size:28px">Welcome to Veggie Ville</div>
+            <div style="color:var(--ink-2);margin-top:12px;font-size:15px;line-height:1.6">Fresh, local produce delivered straight from the farm to your table.</div>
+          </div>
+          <div style="flex:1 1 400px; display:flex; justify-content:center">
+            <div class="surface stack-12 vv-max-420" style="width:100%">
+              <div class="h1">Login</div>
+              <div class="input"><label>Email *</label><input type="email" id="login-email-desktop" class="field" placeholder="somchai@example.com" /></div>
+              <div class="input"><label>Password *</label><div style="position:relative;display:flex"><input type="password" id="login-pass-desktop" class="field" placeholder="••••" style="width:100%;padding-right:44px" /><span class="vv-pwd-toggle small" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;font-weight:600;user-select:none">Show</span></div></div>
+              <span class="small" style="text-align:right;text-decoration:underline;cursor:pointer;display:block" data-route="/login">Forgot password?</span>
+              <button id="btn-submit-login-desktop" class="btn full">Login</button>
+              <div class="small" style="text-align:center;color:var(--ink-3)">— or —</div>
+              <div class="small vv-center">New here? <span data-route="/register" style="font-weight:700;cursor:pointer;text-decoration:underline">Create account</span></div>
+            </div>
+          </div>
         </div>
       </div>
     `
