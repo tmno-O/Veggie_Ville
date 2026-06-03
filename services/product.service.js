@@ -6,7 +6,7 @@ const pool = require('../config/db');
  * @returns {Promise<Array>}
  */
 const getAll = async ({ keyword, category, size, minPrice, maxPrice } = {}) => {
-  let sql      = 'SELECT * FROM products WHERE best_before >= CURDATE()';
+  let sql      = 'SELECT * FROM products WHERE best_before >= date(\'now\', \'localtime\')';
   const params = [];
 
   if (keyword)  { sql += ' AND name LIKE ?';  params.push(`%${keyword}%`); }
@@ -29,7 +29,7 @@ const getById = async (id) => {
     `SELECT p.*, u.name AS seller_name
      FROM products p
      JOIN users u ON u.id = p.seller_id
-     WHERE p.id = ? AND p.best_before >= CURDATE()`,
+     WHERE p.id = ? AND p.best_before >= date('now', 'localtime')`,
     [id]
   );
   if (rows.length === 0) throw new Error('Product not found');

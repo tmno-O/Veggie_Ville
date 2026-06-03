@@ -35,7 +35,7 @@ const checkout = async ({ buyer_id, pickup_slot_id, items }) => {
         `SELECT id, name, price, size, quantity
          FROM products
          WHERE id = ?
-         AND best_before >= CURDATE()
+         AND best_before >= date('now', 'localtime')
          AND quantity >= ?`,
         [item.product_id, item.quantity]
       );

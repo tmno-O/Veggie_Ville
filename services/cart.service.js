@@ -43,7 +43,7 @@ const addItem = async (user_id, product_id, quantity) => {
   const [products] = await pool.query(
     `SELECT * FROM products
      WHERE id = ?
-     AND best_before >= CURDATE()
+     AND best_before >= date('now', 'localtime')
      AND quantity >= ?`,
     [product_id, quantity]
   );
@@ -66,7 +66,7 @@ const addItem = async (user_id, product_id, quantity) => {
     const [recheck] = await pool.query(
       `SELECT id FROM products
        WHERE id = ?
-       AND best_before >= CURDATE()
+       AND best_before >= date('now', 'localtime')
        AND quantity >= ?`,
       [product_id, newQty]
     );
