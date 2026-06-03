@@ -125,6 +125,7 @@ const me = async (req, res) => {
       return authError(res, 401, 'AUTH_SESSION_INVALID', 'Your session expired. Please log in again.');
     }
     const { id, name, email, role } = rows[0];
+    res.set('Cache-Control', 'no-store');
     res.json({ id, name, email, role });
   } catch (err) {
     console.error('[auth.controller] me:', err);

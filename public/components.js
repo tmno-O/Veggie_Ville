@@ -851,7 +851,7 @@
             <div class="col" style="gap:6px"><button class="btn ghost sm">Edit</button><button class="btn danger sm">🗑</button></div>
           </div>`).join('')}
       </div>
-      <div class="fab">+</div>
+      <div class="fab" data-route="/listing">+</div>
       ${api('GET /api/products')}
       ${bottomNav}
     `,

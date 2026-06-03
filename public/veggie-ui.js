@@ -179,6 +179,10 @@
 
   async function fetchCart(){
     try{
+      // Skip if not logged in to avoid 401 console noise
+      const me = await fetchMe();
+      if(!me) return;
+
       const res = await authFetch('/api/cart', {method:'GET'});
       if(!res.ok) throw new Error('no-cart');
       const data = await res.json();

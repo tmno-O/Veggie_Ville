@@ -26,7 +26,7 @@ const getAll = async ({ keyword, category, size, minPrice, maxPrice } = {}) => {
  */
 const getById = async (id) => {
   const [rows] = await pool.query(
-    'SELECT * FROM products WHERE id = ? AND best_before >= CURDATE()',
+    'SELECT * FROM products WHERE id = ?',
     [id]
   );
   if (rows.length === 0) throw new Error('Product not found');

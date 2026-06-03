@@ -51,7 +51,7 @@ CREATE TABLE orders (
   buyer_id       INT           NOT NULL,
   pickup_slot_id INT           NOT NULL,
   total_price    DECIMAL(10,2) NOT NULL,
-  status         ENUM('pending','confirmed','cancelled') DEFAULT 'confirmed',
+  status         ENUM('pending','confirmed','shipped','cancelled') DEFAULT 'confirmed',
   created_at     TIMESTAMP     DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (buyer_id)       REFERENCES users(id)        ON DELETE CASCADE,
   FOREIGN KEY (pickup_slot_id) REFERENCES pickup_slots(id) ON DELETE CASCADE

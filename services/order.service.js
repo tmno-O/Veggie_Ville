@@ -238,10 +238,28 @@ const getReceivedOrders = async (seller_id) => {
   return rows;
 };
 
+/**
+ * Update order status
+ * @param {number} order_id
+ * @param {string} status
+ * @returns {Promise<object>}
+ */
+const updateStatus = async (order_id, status) => {
+  const [result] = await pool.query(
+    'UPDATE orders SET status = ? WHERE id = ?',
+    [status, order_id]
+  );
+  if (result.affectedRows === 0) {
+    throw new Error('Order not found');
+  }
+  return { id: order_id, status };
+};
+
 module.exports = {
   checkout,
   getMyOrders,
   getOrderById,
   getAllOrders,
-  getReceivedOrders
+  getReceivedOrders,
+  updateStatus
 };

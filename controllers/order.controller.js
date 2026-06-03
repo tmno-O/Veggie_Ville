@@ -149,10 +149,35 @@ const getReceived = async (req, res) => {
   }
 };
 
+/**
+ * PATCH /api/orders/:id/status
+ * Update order status — seller or admin
+ */
+const updateStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!status) {
+      return res.status(400).json({ message: 'Status is required' });
+    }
+
+    const result = await orderService.updateStatus(id, status);
+    res.json(result);
+  } catch (err) {
+    console.error('[order.controller] updateStatus:', err);
+    if (err.message === 'Order not found') {
+      return res.status(404).json({ message: err.message });
+    }
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
 module.exports = {
   checkout,
   getMyOrders,
   getOrderById,
   getAllOrders,
-  getReceived
+  getReceived,
+  updateStatus
 };

@@ -33,6 +33,13 @@ router.get(
   controller.getOrderById
 );
 
+// PATCH /api/orders/:id/status — update order status (seller or admin)
+router.patch(
+  '/:id/status',
+  requireRole('seller', 'admin'),
+  controller.updateStatus
+);
+
 // Note: admin list orders is mounted separately in app.js under /api/admin/orders
 
 module.exports = router;

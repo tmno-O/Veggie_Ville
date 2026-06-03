@@ -123,11 +123,11 @@ async function renderPage(pageId, params={}) {
   scrollToCurrentHash();
 }
 
-function navigate(path, replace=false) {
+async function navigate(path, replace=false) {
   if (replace) history.replaceState({}, '', path);
   else history.pushState({}, '', path);
   const route = pageRoute(window.location.pathname);
-  renderPage(route.pageId, route.params);
+  await renderPage(route.pageId, route.params);
 }
 window.VVNavigate = navigate;
 
@@ -441,10 +441,19 @@ async function bindProductDetail(productId) {
       if (sellerName) sellerName.textContent = p.seller_name;
       const sellerMeta = container.querySelector('.vv-seller-meta');
       if (sellerMeta) sellerMeta.textContent = `★ ${p.rating} · ${p.review_count} reviews`;
+      const isExpired = new Date(p.best_before) < new Date().setHours(0,0,0,0);
       const add = Array.from(container.querySelectorAll('.btn')).find(btn => /add/i.test(btn.textContent || ''));
       if (add) {
         add.dataset.productId = p.id;
-        add.textContent = 'Add to Cart';
+        if (isExpired) {
+          add.disabled = true;
+          add.textContent = 'Product Expired';
+          add.classList.add('ghost');
+        } else {
+          add.disabled = false;
+          add.textContent = 'Add to Cart';
+          add.classList.remove('ghost');
+        }
       }
     });
     document.title = `Veggie Ville - ${p.name || 'Product Detail'}`;
@@ -855,12 +864,13 @@ async function bindSellerDashboard() {
         
         const label = item.textContent.trim().toLowerCase();
         if (label === 'dashboard' || label === 'my listings') {
-          // Reset tabs to Listings and reload
-          document.querySelectorAll('.page-phone .tabs .t, .page-desktop .tabs .t').forEach(t => {
-            t.classList.toggle('active', /listings/i.test(t.textContent));
-          });
-          await bindSellerDashboard();
+          navigate('/seller', true);
         } else if (label === 'orders') {
+          // If we are currently in settings view, the table is gone. 
+          // We need to restore the structure by navigating back to /seller first.
+          if (!document.querySelector('.page-desktop tbody, .page-phone .stack-12')) {
+            await navigate('/seller', true);
+          }
           // Find and click the Orders tab
           const ordersTab = [...document.querySelectorAll('.page-phone .tabs .t, .page-desktop .tabs .t')]
             .find(t => /orders received/i.test(t.textContent));
@@ -908,6 +918,14 @@ async function bindSellerDashboard() {
       const els = document.querySelectorAll('.page-phone .stack-12, .page-desktop tbody');
       
       if (!isOrders) {
+        // Restore My Listings headers
+        const table = document.querySelector('.page-desktop .surface table');
+        if (table) {
+          const thead = table.querySelector('thead tr');
+          if (thead) {
+            thead.innerHTML = '<th></th><th>Name</th><th>Size</th><th>Price</th><th>Stock</th><th>Best before</th><th>Status</th><th></th>';
+          }
+        }
         await bindSellerDashboard();
         return;
       }
@@ -924,13 +942,40 @@ async function bindSellerDashboard() {
                 </div>
                 <div style="text-align:right">
                   <div class="mono">${money(o.total_price)}</div>
-                  <span class="badge">${esc(o.status)}</span>
+                  <select class="field sm vv-order-status" data-order-id="${o.id}">
+                    <option value="confirmed" ${o.status==='confirmed'?'selected':''}>ยังไม่ส่ง (Pending)</option>
+                    <option value="shipped" ${o.status==='shipped'?'selected':''}>จัดส่งแล้ว (Shipped)</option>
+                    <option value="cancelled" ${o.status==='cancelled'?'selected':''}>Cancelled</option>
+                  </select>
                 </div>
               </div>`).join('')
           : '<div class="surface small">No orders received yet.</div>';
+        
+        // Update headers if in desktop view
+        const table = document.querySelector('.page-desktop .surface table');
+        if (table) {
+          const thead = table.querySelector('thead tr');
+          if (thead) {
+            thead.innerHTML = '<th>Order ID</th><th>Date</th><th>Items</th><th>Total</th><th>Status</th>';
+          }
+        }
+
         els.forEach(el => {
           if (el.tagName === 'TBODY') {
-            el.innerHTML = received.map(o => `<tr><td class="mono">ORD-${o.id}</td><td>${new Date(o.created_at).toLocaleDateString()}</td><td>${o.item_count}</td><td class="mono">${money(o.total_price)}</td><td><span class="badge">${esc(o.status)}</span></td></tr>`).join('');
+            el.innerHTML = received.map(o => `
+              <tr>
+                <td class="mono">ORD-${o.id}</td>
+                <td>${new Date(o.created_at).toLocaleDateString()}</td>
+                <td>${o.item_count}</td>
+                <td class="mono">${money(o.total_price)}</td>
+                <td>
+                  <select class="field sm vv-order-status" data-order-id="${o.id}">
+                    <option value="confirmed" ${o.status==='confirmed'?'selected':''}>ยังไม่ส่ง (Pending)</option>
+                    <option value="shipped" ${o.status==='shipped'?'selected':''}>จัดส่งแล้ว (Shipped)</option>
+                    <option value="cancelled" ${o.status==='cancelled'?'selected':''}>Cancelled</option>
+                  </select>
+                </td>
+              </tr>`).join('');
           } else {
             el.innerHTML = mobileHtml;
           }
@@ -944,12 +989,28 @@ async function bindSellerDashboard() {
 
   try {
     const mine = await request('/api/products/mine');
-    const cards = mine.map(p => window.productCard({ id:p.id, name:p.name, size:p.size, price:money(p.price), exp:dateOnly(p.best_before), category:p.category })).join('') || '<div class="surface small">No seller listings found.</div>';
+    const mobileHtml = mine.map(p => {
+      const isExpired = new Date(p.best_before) < new Date();
+      return `
+        <div class="surface" style="display:grid;grid-template-columns:56px 1fr auto;gap:10px;align-items:center">
+          <div class="img-ph" style="width:56px;aspect-ratio:1/1">${p.image_url ? `<img src="${p.image_url}" style="width:100%;height:100%;object-fit:cover;border-radius:4px">` : 'IMG'}</div>
+          <div>
+            <div style="font-weight:600;font-size:13px">${esc(p.name)}</div>
+            <div class="row" style="gap:4px;margin-top:4px"><span class="badge">${esc(p.size)}</span><span class="tag ${isExpired?'danger':''}">⏳ ${dateOnly(p.best_before)}</span></div>
+            <div class="small mono">${money(p.price)} · stock ${p.quantity}</div>
+          </div>
+          <div class="col" style="gap:6px">
+            <button class="btn ghost sm" data-route="/listing/${p.id}">Edit</button>
+            <button class="btn danger sm vv-delete-product" data-product-id="${p.id}">🗑</button>
+          </div>
+        </div>`;
+    }).join('') || '<div class="surface small">No seller listings found.</div>';
+
     containers.forEach(el => {
       if (el.tagName === 'TBODY') {
         el.innerHTML = mine.map(p => `<tr><td><div class="img-ph" style="width:48px;height:48px">${p.image_url ? `<img src="${p.image_url}" style="width:100%;height:100%;object-fit:cover">` : 'IMG'}</div></td><td>${esc(p.name)}</td><td><span class="badge">${esc(p.size)}</span></td><td>${money(p.price)}</td><td>${p.quantity}</td><td>${esc(dateOnly(p.best_before))}</td><td><span class="badge">${new Date(p.best_before) < new Date() ? 'Expired' : 'Active'}</span></td><td><button class="btn ghost sm" data-route="/listing/${p.id}">Edit</button> <button class="btn danger sm vv-delete-product" data-product-id="${p.id}">Delete</button></td></tr>`).join('');
       } else {
-        el.innerHTML = cards;
+        el.innerHTML = mobileHtml;
       }
     });
   } catch (err) {
@@ -1165,16 +1226,34 @@ document.addEventListener('click', async e => {
 
 document.addEventListener('change', async e => {
   const role = e.target.closest('.vv-admin-role');
-  if (!role) return;
-  try {
-    await request(`/api/admin/users/${role.dataset.userId}`, {
-      method:'PUT',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ role: role.value })
-    });
-    navigate('/admin', true);
-  } catch (err) {
-    showModalError('Role update failed', err.message);
+  if (role) {
+    try {
+      await request(`/api/admin/users/${role.dataset.userId}`, {
+        method:'PUT',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ role: role.value })
+      });
+      navigate('/admin', true);
+    } catch (err) {
+      showModalError('Role update failed', err.message);
+    }
+    return;
+  }
+
+  const orderStatus = e.target.closest('.vv-order-status');
+  if (orderStatus) {
+    try {
+      await request(`/api/orders/${orderStatus.dataset.orderId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: orderStatus.value })
+      });
+      // Refresh current tab
+      const activeTab = document.querySelector('.tabs .t.active');
+      if (activeTab) activeTab.click();
+    } catch (err) {
+      showModalError('Status update failed', err.message);
+    }
   }
 });
 
