@@ -92,7 +92,8 @@ async function canRender(pageId) {
   if (!allowed) return true;
   const me = await getMe();
   if (!me) {
-    renderNotice('Login required', 'Please login before viewing this page.');
+    const returnTo = encodeURIComponent(window.location.pathname + window.location.search);
+    navigate(`/login?returnTo=${returnTo}`, true);
     return false;
   }
   if (!allowed.includes(me.role)) {
@@ -147,6 +148,10 @@ document.addEventListener('click', (event) => {
 
   const link = event.target.closest('.link, .nav-bar .logo, .bottom-nav .b, .btn, .pcard');
   if (!link) return;
+
+  // Never intercept submit buttons inside forms — let the form's submit handler run
+  if ((link.type === 'submit' || link.getAttribute('type') === 'submit') && link.closest('form')) return;
+
   const text = (link.textContent || '').trim().toLowerCase();
 
   if (link.classList.contains('pcard') && !event.target.closest('.btn')) {
@@ -464,9 +469,12 @@ function bindLogin() {
       setSubmitState(form, true);
       try {
         await window.VVAuth.login(data.email, data.password);
-        navigate('/');
+        const returnTo = new URLSearchParams(window.location.search).get('returnTo') || '/';
+        navigate(returnTo);
       } catch (err) {
         showModalApiError('Login failed', err);
+        const passField = form.querySelector('[name="password"]');
+        if (passField) { passField.value = ''; passField.focus(); }
       } finally {
         setSubmitState(form, false);
       }
@@ -512,10 +520,11 @@ function bindRegister() {
       try {
         await request('/api/auth/register', {
           method: 'POST',
+          credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data)
         });
-        await window.VVAuth.login(data.email, data.password);
+        // Cookie is already set by the server's Set-Cookie header — no second login call needed
         navigate('/');
       } catch (err) {
         showModalApiError('Registration failed', err);

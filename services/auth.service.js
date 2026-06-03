@@ -27,7 +27,9 @@ const register = async ({ name, email, password, role = 'buyer' }) => {
     }
     throw err;
   }
-  return { id: result.insertId, name, email, role };
+  const id = result.insertId;
+  const token = jwt.sign({ id, role }, process.env.JWT_SECRET, { expiresIn: '7d' });
+  return { id, name, email, role, token };
 };
 
 /**

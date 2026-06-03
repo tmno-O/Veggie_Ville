@@ -66,9 +66,10 @@ afterEach(() => {
   jest.restoreAllMocks();
 });
 
-test('protected routes render an auth guard for anonymous users', async () => {
+test('protected routes redirect anonymous users to /login with returnTo', async () => {
   await loadApp({ route: '/cart' });
-  expect(document.body.textContent).toContain('Login required');
+  expect(window.location.pathname).toBe('/login');
+  expect(window.location.search).toContain('returnTo');
 });
 
 test('how it works nav routes to the homepage section', async () => {

@@ -28,6 +28,9 @@ const register = async (req, res) => {
     if (!name || name.trim() === '') {
       return authError(res, 400, 'AUTH_NAME_REQUIRED', 'Please enter your full name.');
     }
+    if (name.trim().length > 100) {
+      return authError(res, 400, 'AUTH_NAME_TOO_LONG', 'Name must be 100 characters or fewer.');
+    }
     if (!normalizedEmail) {
       return authError(res, 400, 'AUTH_EMAIL_REQUIRED', 'Please enter your email address.');
     }
@@ -47,13 +50,14 @@ const register = async (req, res) => {
       return authError(res, 400, 'AUTH_ROLE_INVALID', 'Please choose Buyer or Seller.');
     }
 
-    // Call service
-    const user = await authService.register({
+    // Call service — returns user + token so we can set the cookie in one round-trip
+    const { token, ...user } = await authService.register({
       name: name.trim(),
       email: normalizedEmail,
       password,
       role: normalizedRole
     });
+    setAuthCookie(res, token);
     res.status(201).json(user);
 
   } catch (err) {

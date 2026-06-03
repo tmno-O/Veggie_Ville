@@ -17,17 +17,24 @@ const authenticateToken = (req, res, next) => {
   const header = req.headers['authorization'];
   const bearer = header && header.startsWith('Bearer ') ? header.slice(7) : null;
   const cookieToken = getCookie(req, 'vv_token');
-  const token = bearer || cookieToken;
 
-  if (!token) {
-    return res.status(401).json({ message: 'Unauthorized' });
+  let raw = bearer || cookieToken;
+  if (!raw) {
+    return res.status(401).json({ code: 'AUTH_REQUIRED', message: 'Unauthorized' });
   }
 
+  // Safe decode — malformed percent-encoding must not throw a 500
+  try { raw = decodeURIComponent(raw); } catch { /* use as-is */ }
+
   try {
-    req.user = jwt.verify(decodeURIComponent(token), process.env.JWT_SECRET);
+    req.user = jwt.verify(raw, process.env.JWT_SECRET);
     next();
-  } catch {
-    res.status(401).json({ message: 'Invalid token' });
+  } catch (err) {
+    const expired = err.name === 'TokenExpiredError';
+    res.status(401).json({
+      code:    expired ? 'AUTH_TOKEN_EXPIRED'  : 'AUTH_TOKEN_INVALID',
+      message: expired ? 'Your session has expired. Please log in again.' : 'Invalid token.'
+    });
   }
 };
 

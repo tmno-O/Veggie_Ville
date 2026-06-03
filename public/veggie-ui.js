@@ -56,15 +56,20 @@
     if(!token){ lsRemove('vv_token'); }
   }
 
+  let _cachedUser = null;
+
   async function fetchMe(){
+    if(_cachedUser) return _cachedUser;
     try{
       const res = await fetch('/api/auth/me', { method:'GET', credentials:'include' });
       if(res.status === 401 || res.status === 403){
+        _cachedUser = null;
         lsRemove('vv_token'); // clean up any legacy token left in storage
         return null;
       }
       if(!res.ok) return null;
-      return await res.json();
+      _cachedUser = await res.json();
+      return _cachedUser;
     }catch(e){ return null; }
   }
 
@@ -81,6 +86,7 @@
   function connectSocket(){
     try{
       if(typeof io === 'undefined') return;
+      if(vvSocket && vvSocket.connected) return; // already connected — avoid duplicate socket
       if(vvSocket) vvSocket.disconnect();
       vvSocket = io(); // auth handled via httpOnly cookie
       vvSocket.on('connect', ()=>{});
@@ -100,6 +106,7 @@
   }
 
   async function logout(){
+    _cachedUser = null; // invalidate user cache before the network call
     try {
       await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
     } catch (_) {
