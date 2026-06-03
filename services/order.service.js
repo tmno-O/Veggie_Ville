@@ -214,9 +214,34 @@ const getAllOrders = async (filters = {}) => {
   return rows;
 };
 
+/**
+ * Get all orders containing products owned by a specific seller
+ * @param {number} seller_id - from JWT
+ * @returns {Promise<Array>}
+ */
+const getReceivedOrders = async (seller_id) => {
+  const [rows] = await pool.query(
+    `SELECT
+       o.id,
+       o.total_price,
+       o.status,
+       o.created_at,
+       COUNT(oi.id) AS item_count
+     FROM orders o
+     JOIN order_items oi ON oi.order_id = o.id
+     JOIN products p ON p.id = oi.product_id
+     WHERE p.seller_id = ?
+     GROUP BY o.id, o.total_price, o.status, o.created_at
+     ORDER BY o.created_at DESC`,
+    [seller_id]
+  );
+  return rows;
+};
+
 module.exports = {
   checkout,
   getMyOrders,
   getOrderById,
-  getAllOrders
+  getAllOrders,
+  getReceivedOrders
 };

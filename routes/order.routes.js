@@ -3,6 +3,8 @@ const router  = express.Router();
 const authenticate = require('../middlewares/auth');
 const controller = require('../controllers/order.controller');
 
+const requireRole = require('../middlewares/role');
+
 // All order routes require authentication
 router.use(authenticate);
 
@@ -10,6 +12,13 @@ router.use(authenticate);
 router.post(
   '/',
   controller.checkout
+);
+
+// GET /api/orders/received — orders for products I sell
+router.get(
+  '/received',
+  requireRole('seller', 'admin'),
+  controller.getReceived
 );
 
 // GET /api/orders — my order history (buyer)

@@ -835,21 +835,6 @@ async function bindOrders(orderId=null) {
 async function bindSellerDashboard() {
   const containers = document.querySelectorAll('.page-phone .stack-12, .page-desktop tbody');
   containers.forEach(el => { el.innerHTML = '<div class="surface small">Loading…</div>'; });
-  try {
-    const mine = await request('/api/products/mine');
-    const cards = mine.map(p => window.productCard({ id:p.id, name:p.name, size:p.size, price:money(p.price), exp:dateOnly(p.best_before), category:p.category })).join('') || '<div class="surface small">No seller listings found.</div>';
-    containers.forEach(el => {
-      if (el.tagName === 'TBODY') {
-        el.innerHTML = mine.map(p => `<tr><td><div class="img-ph" style="width:48px;height:48px">IMG</div></td><td>${esc(p.name)}</td><td><span class="badge">${esc(p.size)}</span></td><td>${money(p.price)}</td><td>${p.quantity}</td><td>${esc(dateOnly(p.best_before))}</td><td><span class="badge">${new Date(p.best_before) < new Date() ? 'Expired' : 'Active'}</span></td><td><button class="btn ghost sm" data-route="/listing/${p.id}">Edit</button> <button class="btn danger sm vv-delete-product" data-product-id="${p.id}">Delete</button></td></tr>`).join('');
-      } else {
-        el.innerHTML = cards;
-      }
-    });
-  } catch (err) {
-    containers.forEach(el => { el.innerHTML = '<div class="surface small">Unable to load listings.</div>'; });
-    showInlineError('Unable to load seller dashboard: ' + err.message);
-    return;
-  }
 
   // Bind sidebar navigation (desktop only, bind once per render)
   const sellerSidePanel = document.querySelector('.page-desktop .side-panel');
@@ -857,37 +842,62 @@ async function bindSellerDashboard() {
     sellerSidePanel.dataset.sidebarBound = 'true';
     sellerSidePanel.querySelectorAll('.check').forEach(item => {
       item.style.cursor = 'pointer';
-      item.addEventListener('click', async () => {
-        sellerSidePanel.querySelectorAll('.check').forEach(c => c.classList.remove('on'));
+      item.setAttribute('role', 'button');
+      item.setAttribute('tabindex', '0');
+      
+      const handleAction = async () => {
+        sellerSidePanel.querySelectorAll('.check').forEach(c => {
+          c.classList.remove('on');
+          c.setAttribute('aria-pressed', 'false');
+        });
         item.classList.add('on');
+        item.setAttribute('aria-pressed', 'true');
+        
         const label = item.textContent.trim().toLowerCase();
-        if (label === 'dashboard') {
-          await bindSellerDashboard();
-        } else if (label === 'my listings') {
-          // Switch to My Listings tab and reload products
-          const listingsTab = document.querySelector('.page-desktop .tabs .t');
-          if (listingsTab) {
-            document.querySelectorAll('.page-desktop .tabs .t').forEach(t => t.classList.remove('active'));
-            listingsTab.classList.add('active');
-          }
+        if (label === 'dashboard' || label === 'my listings') {
+          // Reset tabs to Listings and reload
+          document.querySelectorAll('.page-phone .tabs .t, .page-desktop .tabs .t').forEach(t => {
+            t.classList.toggle('active', /listings/i.test(t.textContent));
+          });
           await bindSellerDashboard();
         } else if (label === 'orders') {
-          // Switch to Orders Received tab
-          const ordersTab = [...document.querySelectorAll('.page-desktop .tabs .t')].find(t => /orders received/i.test(t.textContent));
+          // Find and click the Orders tab
+          const ordersTab = [...document.querySelectorAll('.page-phone .tabs .t, .page-desktop .tabs .t')]
+            .find(t => /orders received/i.test(t.textContent));
           if (ordersTab) ordersTab.click();
         } else if (label === 'settings') {
           const content = document.querySelector('.page-desktop tbody')?.closest('table') || document.querySelector('.page-desktop .stack-12');
           if (content) {
             const parent = content.closest('div') || content.parentElement;
-            if (parent) parent.innerHTML = '<div class="surface small" style="padding:24px"><div class="h2" style="margin-bottom:8px">Settings</div><p>Seller settings coming soon.</p></div>';
+            if (parent) {
+              parent.innerHTML = `
+                <div class="surface" style="padding:32px;text-align:center">
+                  <div class="h2" style="margin-bottom:12px">Seller Settings</div>
+                  <p class="small" style="margin-bottom:24px">Manage your shop profile, notification preferences, and payout methods.</p>
+                  <div class="stack-12" style="max-width:400px;margin:0 auto;text-align:left">
+                    <div class="input"><label>Shop Name</label><input class="field" value="My Garden Shop"></div>
+                    <div class="input"><label>Notification Email</label><input class="field" value="seller@test.com"></div>
+                    <button class="btn disabled">Save Changes (Coming Soon)</button>
+                  </div>
+                </div>`;
+            }
           }
+        }
+      };
+
+      item.addEventListener('click', handleAction);
+      item.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          handleAction();
         }
       });
     });
   }
 
   // Bind tab switching (only bind once per page render)
-  document.querySelectorAll('.page-phone .tabs .t, .page-desktop .tabs .t').forEach(tab => {
+  const tabs = document.querySelectorAll('.page-phone .tabs .t, .page-desktop .tabs .t');
+  tabs.forEach(tab => {
     if (tab.dataset.tabBound) return;
     tab.dataset.tabBound = 'true';
     tab.addEventListener('click', async () => {
@@ -895,12 +905,13 @@ async function bindSellerDashboard() {
       tab.classList.add('active');
 
       const isOrders = /orders received/i.test(tab.textContent);
+      const els = document.querySelectorAll('.page-phone .stack-12, .page-desktop tbody');
+      
       if (!isOrders) {
         await bindSellerDashboard();
         return;
       }
 
-      const els = document.querySelectorAll('.page-phone .stack-12, .page-desktop tbody');
       els.forEach(el => { el.innerHTML = '<div class="surface small">Loading…</div>'; });
       try {
         const received = await request('/api/orders/received');
@@ -930,6 +941,21 @@ async function bindSellerDashboard() {
       }
     });
   });
+
+  try {
+    const mine = await request('/api/products/mine');
+    const cards = mine.map(p => window.productCard({ id:p.id, name:p.name, size:p.size, price:money(p.price), exp:dateOnly(p.best_before), category:p.category })).join('') || '<div class="surface small">No seller listings found.</div>';
+    containers.forEach(el => {
+      if (el.tagName === 'TBODY') {
+        el.innerHTML = mine.map(p => `<tr><td><div class="img-ph" style="width:48px;height:48px">${p.image_url ? `<img src="${p.image_url}" style="width:100%;height:100%;object-fit:cover">` : 'IMG'}</div></td><td>${esc(p.name)}</td><td><span class="badge">${esc(p.size)}</span></td><td>${money(p.price)}</td><td>${p.quantity}</td><td>${esc(dateOnly(p.best_before))}</td><td><span class="badge">${new Date(p.best_before) < new Date() ? 'Expired' : 'Active'}</span></td><td><button class="btn ghost sm" data-route="/listing/${p.id}">Edit</button> <button class="btn danger sm vv-delete-product" data-product-id="${p.id}">Delete</button></td></tr>`).join('');
+      } else {
+        el.innerHTML = cards;
+      }
+    });
+  } catch (err) {
+    containers.forEach(el => { el.innerHTML = '<div class="surface small">Unable to load listings.</div>'; });
+    showInlineError('Unable to load seller dashboard: ' + err.message);
+  }
 }
 
 async function bindListingForm(productId=null) {
@@ -947,15 +973,66 @@ async function bindListingForm(productId=null) {
       <div class="input"><label>Best before *</label><input class="field" type="date" name="best_before" value="${esc(dateOnly(product?.best_before || ''))}" required></div>
       <button class="btn full" type="submit">Save listing</button>
     </form>`;
-  document.querySelectorAll('.page-phone .stack-12, .page-desktop .stack-12').forEach((el, idx) => { if (idx < 2) el.innerHTML = formHtml; });
+
+  // FIX Bug #3: Only overwrite the first stack-12 on desktop to preserve the upload UI
+  const mobileStack = document.querySelector('.page-phone .stack-12');
+  if (mobileStack) mobileStack.innerHTML = formHtml;
+  
+  const desktopStacks = document.querySelectorAll('.page-desktop .stack-12');
+  if (desktopStacks[0]) desktopStacks[0].innerHTML = formHtml;
+
+  // Handle file upload UI logic
+  const uploadDivs = document.querySelectorAll('.img-ph.upload');
+  uploadDivs.forEach(div => {
+    if (div.dataset.bound) return;
+    div.dataset.bound = 'true';
+    div.style.cursor = 'pointer';
+
+    // Create hidden file input
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'image/*';
+    fileInput.style.display = 'none';
+    div.appendChild(fileInput);
+
+    div.addEventListener('click', () => fileInput.click());
+
+    fileInput.addEventListener('change', () => {
+      const file = fileInput.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          div.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:4px">`;
+          // Also update live preview if it exists
+          const previewImg = document.querySelector('.page-desktop .vvc-img-emoji');
+          if (previewImg) {
+            previewImg.parentElement.style.background = `url(${e.target.result}) center/cover no-repeat`;
+            previewImg.style.display = 'none';
+          }
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+  });
+
   document.querySelectorAll('.vv-listing-form').forEach(form => {
     form.addEventListener('submit', async e => {
       e.preventDefault();
       try {
+        const formData = new FormData(form);
+        const payload = Object.fromEntries(formData);
+        
+        // Handle file if present (simplified for wireframe - would normally use multipart)
+        const fileInput = form.closest('.page-content')?.querySelector('input[type="file"]');
+        if (fileInput && fileInput.files[0]) {
+          // In a real app, we'd upload the file first or use FormData with multipart
+          // For this wireframe, we'll just send the fields
+        }
+
         await request(productId ? `/api/products/${encodeURIComponent(productId)}` : '/api/products', {
           method: productId ? 'PUT' : 'POST',
           headers:{'Content-Type':'application/json'},
-          body: JSON.stringify(Object.fromEntries(new FormData(form)))
+          body: JSON.stringify(payload)
         });
         navigate('/seller');
       } catch (err) {

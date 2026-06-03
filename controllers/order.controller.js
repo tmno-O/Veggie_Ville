@@ -134,9 +134,25 @@ const getAllOrders = async (req, res) => {
   }
 };
 
+/**
+ * GET /api/orders/received
+ * Get orders containing products owned by the seller
+ */
+const getReceived = async (req, res) => {
+  try {
+    const seller_id = req.user.id;
+    const orders = await orderService.getReceivedOrders(seller_id);
+    res.json(orders);
+  } catch (err) {
+    console.error('[order.controller] getReceived:', err);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
 module.exports = {
   checkout,
   getMyOrders,
   getOrderById,
-  getAllOrders
+  getAllOrders,
+  getReceived
 };

@@ -2,22 +2,9 @@ require('dotenv').config();
 const bcrypt = require('bcryptjs');
 const fs = require('fs');
 const path = require('path');
-const sqlite3 = require('sqlite3').verbose();
-const { open } = require('sqlite');
+const mysql = require('mysql2/promise');
 
 // ─── Test accounts ────────────────────────────────────────────────────────────
-// All three accounts are seeded fresh every time this script runs.
-// Use these credentials to test the app locally or share with teammates.
-//
-//  Role   | Email                    | Password
-//  -------|--------------------------|----------------
-//  buyer  | test@test.com            | password123
-//  seller | seller@test.com          | password123
-//  admin  | audit-admin@example.com  | admin1234
-//
-// Run with:  node seed.js
-// ─────────────────────────────────────────────────────────────────────────────
-
 const TEST_ACCOUNTS = [
   { name: 'Test Buyer',  email: 'test@test.com',           password: 'password123', role: 'buyer'  },
   { name: 'Test Seller', email: 'seller@test.com',         password: 'password123', role: 'seller' },
@@ -25,30 +12,48 @@ const TEST_ACCOUNTS = [
 ];
 
 async function seedUsers() {
+  let connection;
   try {
-    const db = await open({
-      filename: path.join(__dirname, 'database.sqlite'),
-      driver: sqlite3.Database
+    // Create a dedicated connection for seeding to handle multiple statements if needed
+    connection = await mysql.createConnection({
+      host:               process.env.DB_HOST,
+      port:               Number(process.env.DB_PORT) || 3306,
+      user:               process.env.DB_USER,
+      password:           process.env.DB_PASS,
+      database:           process.env.DB_NAME,
+      multipleStatements: true
     });
 
-    // 1. Initialize the database schema (safe — uses CREATE TABLE IF NOT EXISTS)
+    console.log('Connected to MySQL database.');
+
+    // 1. Initialize the database schema
     const schemaPath = path.join(__dirname, 'schema.sql');
     const schemaSql = fs.readFileSync(schemaPath, 'utf-8');
-    await db.exec(schemaSql);
+    
+    // Split by semicolons and filter out empty strings to execute one by one
+    // as some MySQL configs/drivers are picky even with multipleStatements:true
+    console.log('Initializing schema...');
+    const statements = schemaSql
+      .split(';')
+      .map(s => s.trim())
+      .filter(s => s.length > 0 && !s.startsWith('--'));
+
+    for (const sql of statements) {
+      await connection.query(sql);
+    }
 
     console.log('\n🌱 Seeding test accounts...\n');
 
     for (const account of TEST_ACCOUNTS) {
-      // Hash the password the same way the backend does (bcrypt, cost 10)
       const hashedPassword = await bcrypt.hash(account.password, 10);
 
-      // Delete existing record first so the script is idempotent (safe to re-run)
-      await db.run('DELETE FROM users WHERE email = ?', account.email);
+      // Delete existing record
+      await connection.query('DELETE FROM users WHERE email = ?', [account.email]);
 
       // Insert fresh record
-      await db.run(
+      await connection.query(
         'INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)',
-        account.name, account.email, hashedPassword, account.role
+        [account.name, account.email, hashedPassword, account.role]
       );
 
       console.log(`✅  [${account.role.padEnd(6)}]  ${account.email.padEnd(30)}  password: ${account.password}`);
@@ -64,10 +69,11 @@ async function seedUsers() {
     });
     console.log('─────────────────────────────────────────────────────\n');
 
-    await db.close();
+    await connection.end();
     process.exit(0);
   } catch (err) {
     console.error('❌ Failed to seed users:', err);
+    if (connection) await connection.end();
     process.exit(1);
   }
 }
