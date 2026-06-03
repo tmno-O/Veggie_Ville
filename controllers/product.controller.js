@@ -137,4 +137,17 @@ const remove = async (req, res) => {
   }
 };
 
-module.exports = { getAll, getById, create, update, remove };
+/**
+ * GET /api/products/mine
+ */
+const getMine = async (req, res) => {
+  try {
+    const products = await productService.getMine(req.user.id);
+    res.json(products);
+  } catch (err) {
+    console.error('[product.controller] getMine:', err);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+module.exports = { getAll, getById, create, update, remove, getMine };

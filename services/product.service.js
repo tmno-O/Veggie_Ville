@@ -126,4 +126,18 @@ const remove = async (id, seller_id, role) => {
   return { message: 'Product deleted successfully' };
 };
 
-module.exports = { getAll, getById, create, update, remove };
+/**
+ * Get all products owned by a seller
+ * @param {number} seller_id
+ * @returns {Promise<Array>}
+ */
+const getMine = async (seller_id) => {
+  const [rows] = await pool.query(
+    `SELECT id, seller_id, name, description, price, quantity, size, category, best_before, image_url, created_at
+     FROM products WHERE seller_id = ? ORDER BY created_at DESC`,
+    [seller_id]
+  );
+  return rows;
+};
+
+module.exports = { getAll, getById, create, update, remove, getMine };
