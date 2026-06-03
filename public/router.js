@@ -205,12 +205,24 @@ async function bindPage(pageId, params) {
   if (pageId === 'p12') await bindPickupSlots();
 }
 
-async function bindProducts(pageId, filters={}, page=1) {
-  try {
-    _catalogPage = page;
-    const query = new URLSearchParams({ ...filters, page, limit: CATALOG_PAGE_SIZE });
-    const data = await request(`/api/products?${query.toString()}`);
+let _catalogFilters = {};
 
+async function bindProducts(pageId, filters = {}, page = 1) {
+  _catalogFilters = { ...filters };
+  _catalogPage = page;
+  try {
+    const query = new URLSearchParams();
+    if (_catalogFilters.category) query.set('category', _catalogFilters.category);
+    if (_catalogFilters.size) query.set('size', _catalogFilters.size);
+    if (_catalogFilters.minPrice) query.set('min', _catalogFilters.minPrice);
+    if (_catalogFilters.maxPrice) query.set('max', _catalogFilters.maxPrice);
+    if (_catalogFilters.keyword) query.set('keyword', _catalogFilters.keyword);
+    if (_catalogFilters.sort) query.set('sort', _catalogFilters.sort);
+    if (_catalogFilters.expDanger) query.set('expDanger', _catalogFilters.expDanger);
+    query.set('limit', CATALOG_PAGE_SIZE);
+    query.set('offset', (page - 1) * CATALOG_PAGE_SIZE);
+
+    const data = await request(`/api/products?${query.toString()}`);
     const products = Array.isArray(data) ? data : (data.items || []);
     const total = data.total || products.length;
     const totalPages = Math.max(1, Math.ceil(total / CATALOG_PAGE_SIZE));
@@ -223,124 +235,174 @@ async function bindProducts(pageId, filters={}, page=1) {
     if (pageId === 'p1') {
       document.querySelectorAll('.page-phone .stack-12, .page-desktop .grid-4').forEach(el => { el.innerHTML = cards; });
     } else {
-      bindCatalogFilters(filters);
-      const mobileGrid = document.querySelectorAll('.page-phone .grid-2')[1];
-      const desktopGrid = document.querySelector('.page-desktop .grid-3');
-      if (mobileGrid) mobileGrid.innerHTML = cards;
-      if (desktopGrid) desktopGrid.innerHTML = cards;
-      renderPagination(totalPages, page, filters);
+      bindCatalogFilters();
+      updateFilterUI(_catalogFilters);
+      renderFilterTags(_catalogFilters);
+      document.querySelectorAll('.vv-result-count').forEach(el => { el.textContent = `${total} result${total === 1 ? '' : 's'}`; });
+      document.querySelectorAll('.vv-product-grid').forEach(el => { el.innerHTML = cards; });
+      renderPagination(totalPages, page, _catalogFilters);
     }
   } catch (err) {
     showInlineError('Unable to load products: ' + err.message);
   }
 }
 
-function renderPagination(totalPages, currentPage, filters) {
-  const paginationRow = document.querySelector('.page-desktop .vv-pagination-row, .page-desktop .grid-3 + .row');
-  if (!paginationRow) return;
+function updateFilterUI(filters) {
+  // side panel
+  const sidePanel = document.querySelector('.page-desktop .side-panel');
+  if (sidePanel) {
+    const cat = sidePanel.querySelector(`input[name="vv-category"][value="${filters.category || ''}"]`);
+    if (cat) {
+      cat.checked = true;
+      sidePanel.querySelectorAll('.check').forEach(c => { if (!c.closest('.row')) c.classList.remove('on'); });
+      cat.closest('.check')?.classList.add('on');
+    }
+    const size = sidePanel.querySelector(`input[name="vv-size"][value="${filters.size || ''}"]`);
+    if (size) {
+      size.checked = true;
+      sidePanel.querySelectorAll('.row .check').forEach(c => c.classList.remove('on'));
+      size.closest('.check')?.classList.add('on');
+    }
+    const min = sidePanel.querySelector('input[name="minPrice"]');
+    const max = sidePanel.querySelector('input[name="maxPrice"]');
+    if (min) min.value = filters.minPrice || 0;
+    if (max) max.value = filters.maxPrice || 500;
+    const minLabel = sidePanel.querySelector('.vv-min-price');
+    const maxLabel = sidePanel.querySelector('.vv-max-price');
+    if (minLabel) minLabel.textContent = filters.minPrice || 0;
+    if (maxLabel) maxLabel.textContent = filters.maxPrice || 500;
+    const exp = sidePanel.querySelector('input[name="vv-exp"]');
+    if (exp) {
+      exp.checked = !!filters.expDanger;
+      if (exp.checked) exp.closest('.check')?.classList.add('on');
+      else exp.closest('.check')?.classList.remove('on');
+    }
+  }
 
-  const pages = [];
-  for (let i = 1; i <= totalPages; i++) pages.push(i);
+  // Search inputs
+  document.querySelectorAll('.vv-desktop-search, .vv-mobile-filters').forEach(container => {
+    if (container.querySelector('input[name="keyword"]')) {
+      container.querySelector('input[name="keyword"]').value = filters.keyword || '';
+    } else {
+      const isMobile = container.classList.contains('vv-mobile-filters');
+      container.innerHTML = `
+        <form class="vv-search-form" style="display:flex;gap:8px;width:100%">
+          <input class="field" name="keyword" placeholder="${isMobile ? 'Search...' : 'Search produce...'}" value="${esc(filters.keyword || '')}" style="flex:1;height:36px;border:1px solid var(--line);border-radius:6px;padding:0 10px">
+          ${isMobile ? '<button class="btn sm" type="submit">Go</button>' : ''}
+        </form>`;
+      const form = container.querySelector('.vv-search-form');
+      form.addEventListener('submit', e => {
+        e.preventDefault();
+        const kw = form.querySelector('input[name="keyword"]').value;
+        bindProducts('p2', { ..._catalogFilters, keyword: kw }, 1);
+      });
+      // Debounced auto-search for desktop
+      if (!isMobile) {
+        let timer;
+        form.querySelector('input').addEventListener('input', (e) => {
+          clearTimeout(timer);
+          timer = setTimeout(() => {
+            bindProducts('p2', { ..._catalogFilters, keyword: e.target.value }, 1);
+          }, 400);
+        });
+      }
+    }
+  });
+}
 
-  paginationRow.innerHTML = pages.map(p => {
-    const isActive = p === currentPage;
-    return `<span class="tag vv-page-btn" style="${isActive ? 'background:#111;color:#fff;' : ''}" data-page="${p}">${p}</span>`;
-  }).join('');
+function renderFilterTags(filters) {
+  const tags = [];
+  if (filters.category) tags.push({ key: 'category', label: `Category: ${filters.category}` });
+  if (filters.size) tags.push({ key: 'size', label: `Size: ${filters.size}` });
+  if (filters.keyword) tags.push({ key: 'keyword', label: `Keyword: ${filters.keyword}` });
+  if (filters.minPrice > 0 || filters.maxPrice < 500) tags.push({ key: 'price', label: `Price: ฿${filters.minPrice||0}–฿${filters.maxPrice||500}` });
+  if (filters.expDanger) tags.push({ key: 'expDanger', label: 'Expiring soon' });
 
-  paginationRow.insertAdjacentHTML('afterbegin',
-    `<span class="tag vv-page-btn" data-page="${Math.max(1, currentPage - 1)}">&lsaquo;</span>`);
-  paginationRow.insertAdjacentHTML('beforeend',
-    `<span class="tag vv-page-btn" data-page="${Math.min(totalPages, currentPage + 1)}">&rsaquo;</span>`);
+  const html = tags.map(t => `<span class="tag" style="cursor:pointer" data-clear="${t.key}">${t.label} ✕</span>`).join('') + (tags.length > 0 ? '<span class="small" style="margin-left:auto;text-decoration:underline;cursor:pointer" data-clear="all">Clear all</span>' : '');
 
-  paginationRow.querySelectorAll('[data-page]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const p = Number(btn.dataset.page);
-      if (p !== _catalogPage) bindProducts('p2', filters, p);
+  document.querySelectorAll('.vv-filter-tags').forEach(el => {
+    el.innerHTML = html;
+    el.querySelectorAll('[data-clear]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const key = btn.dataset.clear;
+        if (key === 'all') bindProducts('p2', {}, 1);
+        else if (key === 'price') {
+          const next = { ..._catalogFilters }; delete next.minPrice; delete next.maxPrice;
+          bindProducts('p2', next, 1);
+        } else {
+          const next = { ..._catalogFilters }; delete next[key];
+          bindProducts('p2', next, 1);
+        }
+      });
     });
   });
 }
 
-function bindCatalogFilters(filters={}) {
-  const filterHtml = `
-    <form class="vv-filter-form row" style="flex-wrap:wrap;gap:8px;margin-bottom:12px">
-      <input class="field" name="keyword" placeholder="Search produce" value="${esc(filters.keyword || '')}" style="height:36px;border:1px solid var(--line);border-radius:6px;padding:0 10px">
-      <select class="field" name="category" style="height:36px;border:1px solid var(--line);border-radius:6px"><option value="">All categories</option>${['Vegetable','Fruit','Herb','Honey','Egg'].map(c=>`<option ${filters.category===c?'selected':''}>${c}</option>`).join('')}</select>
-      <select class="field" name="size" style="height:36px;border:1px solid var(--line);border-radius:6px"><option value="">All sizes</option>${['S','M','L','XL'].map(s=>`<option ${filters.size===s?'selected':''}>${s}</option>`).join('')}</select>
-      <input class="field" name="minPrice" type="number" min="0" placeholder="Min" value="${esc(filters.minPrice || '')}" style="width:84px;height:36px;border:1px solid var(--line);border-radius:6px;padding:0 10px">
-      <input class="field" name="maxPrice" type="number" min="0" placeholder="Max" value="${esc(filters.maxPrice || '')}" style="width:84px;height:36px;border:1px solid var(--line);border-radius:6px;padding:0 10px">
-      <button class="btn sm" type="submit">Apply</button>
-      <button class="btn ghost sm" type="button" data-route="/browse">Clear</button>
-    </form>`;
-  const mobileHost = document.querySelector('.page-phone .surface.muted');
-  const desktopHost = document.querySelector('.page-desktop [style*="flex:1;padding:24px"]');
-  const applyFormFilters = async (form) => {
-    const next = Object.fromEntries([...new FormData(form)].filter(([, v]) => v !== ''));
-    await bindProducts('p2', next, 1);
-  };
-
-  if (mobileHost) {
-    mobileHost.innerHTML = filterHtml;
-    const form = mobileHost.querySelector('.vv-filter-form');
-    if (form) {
-      form.addEventListener('submit', async e => { e.preventDefault(); await applyFormFilters(form); });
-      form.querySelectorAll('input, select').forEach(el => el.addEventListener('change', () => applyFormFilters(form)));
+function renderPagination(totalPages, currentPage, filters) {
+  const containers = document.querySelectorAll('.vv-pagination-row, .vv-pagination-mobile');
+  containers.forEach(container => {
+    const isMobile = container.classList.contains('vv-pagination-mobile');
+    const pages = [];
+    if (isMobile) {
+      container.innerHTML = `<button class="btn ghost full vv-load-more" ${currentPage >= totalPages ? 'disabled' : ''}>${currentPage >= totalPages ? 'No more products' : 'Load more'}</button>`;
+      container.querySelector('.vv-load-more')?.addEventListener('click', () => {
+        bindProducts('p2', filters, currentPage + 1);
+      });
+      return;
     }
-  }
-  if (desktopHost && !desktopHost.querySelector('.vv-filter-form')) {
-    desktopHost.insertAdjacentHTML('afterbegin', filterHtml);
-    const form = desktopHost.querySelector('.vv-filter-form');
-    if (form && !form.dataset.bound) {
-      form.dataset.bound = 'true';
-      form.addEventListener('submit', async e => { e.preventDefault(); await applyFormFilters(form); });
-      form.querySelectorAll('input, select').forEach(el => el.addEventListener('change', () => applyFormFilters(form)));
-    }
-  }
 
+    for (let i = 1; i <= totalPages; i++) pages.push(i);
+    container.innerHTML = pages.map(p => {
+      const isActive = p === currentPage;
+      return `<span class="tag vv-page-btn" style="${isActive ? 'background:#111;color:#fff;' : ''}" data-page="${p}">${p}</span>`;
+    }).join('');
+
+    container.insertAdjacentHTML('afterbegin', `<span class="tag vv-page-btn" data-page="${Math.max(1, currentPage - 1)}">&lsaquo;</span>`);
+    container.insertAdjacentHTML('beforeend', `<span class="tag vv-page-btn" data-page="${Math.min(totalPages, currentPage + 1)}">&rsaquo;</span>`);
+
+    container.querySelectorAll('[data-page]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const p = Number(btn.dataset.page);
+        if (p !== _catalogPage) bindProducts('p2', filters, p);
+      });
+    });
+  });
+}
+
+function bindCatalogFilters() {
   const sidePanel = document.querySelector('.page-desktop .side-panel');
-  if (sidePanel && sidePanel.querySelector('.vv-filter-input') && !sidePanel.dataset.bound) {
+  if (sidePanel && !sidePanel.dataset.bound) {
     sidePanel.dataset.bound = 'true';
-    const applySideFilters = async () => {
-      const next = {};
-      const cat = sidePanel.querySelector('input[name="vv-category"]:checked');
-      const size = sidePanel.querySelector('input[name="vv-size"]:checked');
-      const min = sidePanel.querySelector('input[name="minPrice"]');
-      const max = sidePanel.querySelector('input[name="maxPrice"]');
-      const exp = sidePanel.querySelector('input[name="vv-exp"]:checked');
-      if (cat && cat.value) next.category = cat.value;
-      if (size && size.value) next.size = size.value;
-      if (min && Number(min.value) > 0) next.minPrice = min.value;
-      if (max && Number(max.value) < 500) next.maxPrice = max.value;
-      if (exp && exp.value) next.expDanger = exp.value;
-      const minLabel = sidePanel.querySelector('.vv-min-price');
-      const maxLabel = sidePanel.querySelector('.vv-max-price');
-      if (minLabel) minLabel.textContent = min ? min.value : '0';
-      if (maxLabel) maxLabel.textContent = max ? max.value : '500';
-      await bindProducts('p2', next, 1);
-    };
     sidePanel.addEventListener('change', async (e) => {
       if (!e.target.matches('.vv-filter-input')) return;
-      if (e.target.name === 'vv-category') {
-        sidePanel.querySelectorAll('.check').forEach(c => { if (!c.closest('.row')) c.classList.remove('on'); });
-        e.target.closest('.check')?.classList.add('on');
-      }
-      if (e.target.name === 'vv-size') {
-        sidePanel.querySelectorAll('.row .check').forEach(c => c.classList.remove('on'));
-        e.target.closest('.check')?.classList.add('on');
-      }
-      if (e.target.name === 'vv-exp') {
-        if (e.target.checked) e.target.closest('.check')?.classList.add('on');
-        else e.target.closest('.check')?.classList.remove('on');
-      }
-      await applySideFilters();
+      
+      const next = { ..._catalogFilters };
+      const cat = sidePanel.querySelector('input[name="vv-category"]:checked')?.value;
+      const size = sidePanel.querySelector('input[name="vv-size"]:checked')?.value;
+      const min = sidePanel.querySelector('input[name="minPrice"]')?.value;
+      const max = sidePanel.querySelector('input[name="maxPrice"]')?.value;
+      const exp = sidePanel.querySelector('input[name="vv-exp"]')?.checked;
+
+      if (cat) next.category = cat; else delete next.category;
+      if (size) next.size = size; else delete next.size;
+      if (Number(min) > 0) next.minPrice = min; else delete next.minPrice;
+      if (Number(max) < 500) next.maxPrice = max; else delete next.maxPrice;
+      if (exp) next.expDanger = 'true'; else delete next.expDanger;
+
+      await bindProducts('p2', next, 1);
     });
+
     sidePanel.addEventListener('input', (e) => {
       if (e.target.type === 'range') {
         const min = sidePanel.querySelector('input[name="minPrice"]');
         const max = sidePanel.querySelector('input[name="maxPrice"]');
+        if (e.target.name === 'minPrice' && Number(min.value) > Number(max.value)) max.value = min.value;
+        if (e.target.name === 'maxPrice' && Number(max.value) < Number(min.value)) min.value = max.value;
+        
         const minLabel = sidePanel.querySelector('.vv-min-price');
         const maxLabel = sidePanel.querySelector('.vv-max-price');
-        if (minLabel) minLabel.textContent = min ? min.value : '0';
-        if (maxLabel) maxLabel.textContent = max ? max.value : '500';
+        if (minLabel) minLabel.textContent = min.value;
+        if (maxLabel) maxLabel.textContent = max.value;
       }
     });
   }
@@ -590,40 +652,135 @@ async function bindCheckoutPage() {
   }
 }
 
+let _selectedPickupSlotId = '';
+window.VVRefreshCartPage = bindCartPage;
+
 function renderCartSections(cart, slots) {
-  const rows = (cart.items || []).map(item => `
+  const items = cart.items || [];
+  const itemCount = items.reduce((sum, item) => sum + item.cart_quantity, 0);
+
+  // Update Headers
+  document.querySelectorAll('.page-phone, .page-desktop').forEach(container => {
+    const h1 = container.querySelector('.h1');
+    const mono = container.querySelector('span.mono');
+    if (container.classList.contains('page-phone')) {
+      if (mono && mono.parentElement.contains(h1)) mono.textContent = `${itemCount} item${itemCount === 1 ? '' : 's'}`;
+    } else {
+      if (h1 && h1.textContent.includes('My cart')) h1.textContent = `My cart (${itemCount} item${itemCount === 1 ? '' : 's'})`;
+    }
+  });
+
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+
+  const getRowExpiryTag = (bestBefore) => {
+    const exp = new Date(bestBefore);
+    const diff = (exp - now) / (1000 * 60 * 60 * 24);
+    if (diff < 0) return `<span class="tag danger">Expired ${esc(dateOnly(bestBefore))}</span>`;
+    if (diff <= 7) return `<span class="tag danger">⏳ Best before ${esc(dateOnly(bestBefore))}</span>`;
+    return `<span class="tag">Best before ${esc(dateOnly(bestBefore))}</span>`;
+  };
+
+  // Mobile rows (div cards)
+  const mobileRows = items.map(item => `
     <div class="surface vv-cart-row" data-cart-item="${item.cart_item_id}" data-product-id="${item.product_id}" style="display:grid;grid-template-columns:60px 1fr auto;gap:10px;align-items:center">
       <div class="img-ph" style="width:60px;aspect-ratio:1/1">IMG</div>
       <div>
         <div style="font-weight:600;font-size:13px">${esc(item.name)}</div>
-        <div class="row" style="gap:4px;margin-top:4px"><span class="badge">${esc(item.size)}</span><span class="tag">Best before ${esc(dateOnly(item.best_before))}</span></div>
-        <div class="row" style="gap:8px;margin-top:6px"><div class="qty"><span data-qty="-1">-</span><span class="n">${item.cart_quantity}</span><span data-qty="1">+</span></div><span class="small">${money(item.price)} ea.</span></div>
+        <div class="row" style="gap:4px;margin-top:4px"><span class="badge">${esc(item.size)}</span>${getRowExpiryTag(item.best_before)}</div>
+        <div class="row" style="gap:8px;margin-top:6px"><div class="qty"><span data-qty="-1" style="cursor:pointer">-</span><span class="n">${item.cart_quantity}</span><span data-qty="1" style="cursor:pointer">+</span></div><span class="small">${money(item.price)} ea.</span></div>
       </div>
       <div style="text-align:right"><div style="font-weight:700">${money(item.subtotal)}</div><button class="btn ghost sm vv-remove-item" data-cart-item="${item.cart_item_id}">Remove</button></div>
     </div>`).join('') || '<div class="surface small">Your cart is empty.</div>';
 
-  const slotOptions = (slots || []).map(s => `<option value="${s.id}">${new Date(s.slot_start).toLocaleString()} - ${new Date(s.slot_end).toLocaleTimeString()} (max ${s.max_orders})</option>`).join('');
-  const summary = `
-    <div class="surface stack-8">
-      <div class="row between"><span>Total</span><span class="mono">${money(cart.total)}</span></div>
-      <label class="input"><span>Pickup window *</span><select class="field vv-pickup-slot"><option value="">Select pickup window</option>${slotOptions}</select></label>
-      <button class="btn full vv-place-order" ${cart.items?.length ? '' : 'disabled'}>Place order</button>
-    </div>`;
+  // Desktop rows (table rows)
+  const desktopRows = items.map(item => `
+    <tr class="vv-cart-row" data-cart-item="${item.cart_item_id}" data-product-id="${item.product_id}">
+      <td><div class="img-ph" style="width:48px;height:48px;aspect-ratio:1/1"></div></td>
+      <td><div style="font-weight:600">${esc(item.name)}</div><div class="small mono">SKU-${String(item.name).replace(/[^A-Z0-9]/g,'-').slice(0,8)}</div></td>
+      <td><span class="badge">${esc(item.size)}</span></td>
+      <td>${getRowExpiryTag(item.best_before)}</td>
+      <td><div class="qty"><span data-qty="-1" style="cursor:pointer">−</span><span class="n">${item.cart_quantity}</span><span data-qty="1" style="cursor:pointer">+</span></div></td>
+      <td class="mono">${money(item.subtotal)}</td>
+      <td><span class="small vv-remove-item" style="text-decoration:underline;cursor:pointer" data-cart-item="${item.cart_item_id}">🗑</span></td>
+    </tr>`).join('') || '<tr><td colspan="7" class="small">Your cart is empty.</td></tr>';
 
-  document.querySelectorAll('.page-phone, .page-desktop').forEach(container => {
-    const stack = container.querySelector('.stack-12');
-    if (stack) stack.innerHTML = rows;
-    const surfaces = container.querySelectorAll('.surface.stack-8');
-    const target = surfaces[surfaces.length - 1];
-    if (target) target.outerHTML = summary;
+  // Calculate Expiry Warnings
+  const expired = items.filter(i => new Date(i.best_before) < now);
+  const soon = items.filter(i => {
+    const exp = new Date(i.best_before);
+    const diff = (exp - now) / (1000 * 60 * 60 * 24);
+    return diff >= 0 && diff <= 7;
   });
 
-  document.querySelectorAll('.vv-place-order').forEach(btn => btn.addEventListener('click', placeOrderFromPage));
+  let warningHtml = '';
+  if (expired.length > 0 || soon.length > 0) {
+    const expNames = expired.map(i => i.name).join(', ');
+    const soonText = soon.map(i => {
+      const diff = Math.ceil((new Date(i.best_before) - now) / (1000 * 60 * 60 * 24));
+      if (diff === 0) return `${i.name} expires today`;
+      return `${i.name} ends in ${diff} day${diff===1?'':'s'}`;
+    }).join('. ');
+    
+    let msg = '';
+    if (expired.length > 0) msg += `Expired item warning: ${expNames}. `;
+    if (soon.length > 0) msg += `Expiring soon: ${soonText}. `;
+    msg += 'Flagged at checkout.';
+    
+    if (window.VVCallout) {
+      warningHtml = window.VVCallout(msg, '⚠ Expiring soon (<7d)', 'error');
+    }
+  }
+
+  const subtotal = Number(cart.total || 0);
+  const serviceFee = items.length > 0 ? 20 : 0;
+  const grandTotal = subtotal + serviceFee;
+
+  const slotOptions = (slots || []).map(s => `<option value="${s.id}" ${_selectedPickupSlotId == s.id ? 'selected' : ''}>${new Date(s.slot_start).toLocaleString()} - ${new Date(s.slot_end).toLocaleTimeString()} (max ${s.max_orders})</option>`).join('');
+  const summary = `
+    <div class="surface stack-8">
+      <div class="h2">Order summary</div>
+      <div class="row between"><span>Subtotal</span><span class="mono">${money(subtotal)}</span></div>
+      <div class="row between"><span>Service fee</span><span class="mono">${money(serviceFee)}</span></div>
+      <div class="hr"></div>
+      <div class="row between" style="font-weight:700"><span>Total</span><span class="mono">${money(grandTotal)}</span></div>
+      <label class="input"><span>Pickup window *</span><select class="field vv-pickup-slot"><option value="">Select pickup window</option>${slotOptions}</select></label>
+      <button class="btn full vv-place-order" ${items.length ? '' : 'disabled'}>Place order</button>
+    </div>`;
+
+  document.querySelectorAll('.page-phone').forEach(container => {
+    const itemsTarget = container.querySelector('.vv-cart-items');
+    if (itemsTarget) itemsTarget.innerHTML = mobileRows;
+    const warningTarget = container.querySelector('.vv-cart-warnings');
+    if (warningTarget) warningTarget.innerHTML = warningHtml;
+    const summaryTarget = container.querySelector('.vv-cart-summary');
+    if (summaryTarget) summaryTarget.innerHTML = summary;
+  });
+
+  document.querySelectorAll('.page-desktop').forEach(container => {
+    const itemsTarget = container.querySelector('.vv-cart-items tbody');
+    if (itemsTarget) itemsTarget.innerHTML = desktopRows;
+    const warningTarget = container.querySelector('.vv-cart-warnings');
+    if (warningTarget) warningTarget.innerHTML = warningHtml;
+    const summaryTarget = container.querySelector('.vv-cart-summary');
+    if (summaryTarget) summaryTarget.innerHTML = summary;
+  });
+
+  // Track pickup slot changes to persist across re-renders
+  document.querySelectorAll('.vv-pickup-slot').forEach(select => {
+    select.addEventListener('change', (e) => { _selectedPickupSlotId = e.target.value; });
+  });
 }
+
+// Global delegated listener for place order to avoid duplication
+document.addEventListener('click', e => {
+  const btn = e.target.closest('.vv-place-order');
+  if (btn) placeOrderFromPage(e);
+});
 
 async function placeOrderFromPage(e) {
   e.preventDefault();
-  const root = e.currentTarget.closest('.page-phone, .page-desktop') || document;
+  const root = e.target.closest('.page-phone, .page-desktop') || document;
   const slot = root.querySelector('.vv-pickup-slot')?.value;
   if (!slot) return showModalError('Pickup required', 'Select a pickup window before placing the order.');
   try {

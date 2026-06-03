@@ -164,6 +164,7 @@
       <span class="pin">${lbl.split(' ')[0]}</span>
       <div><span class="lbl">${lbl.replace(/^\S+\s/,'')}</span>${txt}</div>
     </div>`;
+  window.VVCallout = callout;
 
   const api = (txt) => `
     <div class="callout api">
@@ -359,41 +360,14 @@
     apis:'GET /api/products?category=&size=&min=&max=&keyword=&sort=',
     mobile:`
       ${navBarMobile}
-      <div class="surface muted" style="position:sticky;top:0">
-        <div class="h3">Filters</div>
-        <div class="grid-2" style="margin-top:8px">
-          <div class="select">Category: All</div>
-          <div class="select">Size: All</div>
-        </div>
-        <div style="margin-top:8px" class="slider">
-          <div class="small mono">Price ฿0 — ฿500</div>
-          <div class="track" style="position:relative">
-            <div class="thumb" style="left:18%"></div><div class="thumb" style="left:62%"></div>
-          </div>
-        </div>
-        <div class="input" style="margin-top:8px">
-          <label>Keyword <span class="small">· debounced 300ms</span></label>
-          <div class="field">tomato<span style="margin-left:auto" class="small mono">…typing</span></div>
-        </div>
+      <div class="vv-mobile-filters" style="padding:12px;background:var(--vv-stone-50);position:sticky;top:0;z-index:100"></div>
+      <div class="vv-filter-tags row" style="flex-wrap:wrap;gap:6px;padding:0 12px;margin-top:8px"></div>
+      <div class="row between" style="padding:0 12px;margin-top:8px">
+        <div class="small mono vv-result-count">0 results</div>
+        <div class="select" style="width:140px">Sort: Newest</div>
       </div>
-      <div class="row" style="flex-wrap:wrap;gap:6px">
-        <span class="tag">Category: Vegetable ✕</span>
-        <span class="tag">Size: M ✕</span>
-        <span class="small" style="margin-left:auto;text-decoration:underline">Clear all</span>
-      </div>
-      <div class="row between">
-        <div class="small mono">24 results</div>
-        <div class="select" style="width:160px">Sort: Newest</div>
-      </div>
-      <div class="grid-2">
-        ${productCard({id:109,name:'Tomato',size:'M',exp:'2026-05-20',expDanger:true,price:'฿120',category:'Vegetable'})}
-        ${productCard({id:101,name:'Cherry tomato',size:'S',exp:'2026-05-30',price:'฿80',category:'Vegetable'})}
-        ${productCard({id:110,name:'Heirloom tomato',size:'L',exp:'2026-06-02',price:'฿180',category:'Vegetable'})}
-        ${productCard({id:111,name:'Roma tomato',size:'M',exp:'2026-05-25',price:'฿95',category:'Vegetable'})}
-      </div>
-      <button class="btn ghost full">Load more</button>
-      ${api('GET /api/products?category=vegetable&amp;size=M&amp;keyword=tomato')}
-      ${callout('Expired rows excluded server-side; no client-side date filter needed.','⚡ Expiry filter (server)')}
+      <div class="grid-2 vv-product-grid" style="padding:12px"></div>
+      <div class="vv-pagination-mobile" style="padding:12px;text-align:center"></div>
       ${bottomNav}
     `,
     desktop:`
@@ -420,31 +394,18 @@
             <input type="range" name="minPrice" class="vv-filter-input" min="0" max="500" value="0" style="width:100%">
             <input type="range" name="maxPrice" class="vv-filter-input" min="0" max="500" value="500" style="width:100%">
           </div>
-          <h4>Best before</h4>
+          <h4>Options</h4>
           <label class="check"><input type="checkbox" name="vv-exp" value="true" class="vv-filter-input"><span class="box"></span>Show expiring soon (&lt;7d)</label>
         </aside>
         <div style="flex:1;padding:24px">
+          <div class="vv-desktop-top-filters"></div>
           <div class="row between" style="margin-bottom:12px">
-            <div class="input" style="flex:1;max-width:480px"><div class="field">🔍 tomato</div></div>
-            <div class="row"><span class="small mono">24 results</span><div class="select" style="width:200px">Sort: Newest</div></div>
+            <div class="vv-desktop-search" style="flex:1;max-width:480px"></div>
+            <div class="row"><span class="small mono vv-result-count">0 results</span><div class="select" style="width:160px">Sort: Newest</div></div>
           </div>
-          <div class="row" style="flex-wrap:wrap;gap:6px;margin-bottom:12px">
-            <span class="tag">Category: Vegetable ✕</span>
-            <span class="tag">Size: M ✕</span>
-            <span class="small" style="text-decoration:underline">Clear all</span>
-          </div>
-          <div class="grid-3">
-            ${productCard({id:109,name:'Tomato',size:'M',exp:'2026-05-20',expDanger:true,price:'฿120',category:'Vegetable'})}
-            ${productCard({id:101,name:'Cherry tomato',size:'S',exp:'2026-05-30',price:'฿80',category:'Vegetable'})}
-            ${productCard({id:110,name:'Heirloom tomato',size:'L',exp:'2026-06-02',price:'฿180',category:'Vegetable'})}
-            ${productCard({id:111,name:'Roma tomato',size:'M',exp:'2026-05-25',price:'฿95',category:'Vegetable'})}
-            ${productCard({id:112,name:'Yellow tomato',size:'S',exp:'2026-06-08',price:'฿110',category:'Vegetable'})}
-            ${productCard({name:'Green tomato',size:'M',exp:'2026-06-12',price:'฿70'})}
-          </div>
-          <div class="row vv-pagination-row" style="justify-content:center;margin-top:16px">
-            <span class="tag vv-page-btn">‹</span><span class="tag vv-page-btn" style="background:#111;color:#fff">1</span><span class="tag vv-page-btn">2</span><span class="tag vv-page-btn">3</span><span class="tag vv-page-btn">…</span><span class="tag vv-page-btn">›</span>
-          </div>
-          <div style="margin-top:16px">${api('GET /api/products?category=vegetable&amp;size=M&amp;min=0&amp;max=500&amp;keyword=tomato&amp;sort=newest&amp;page=2')}</div>
+          <div class="vv-filter-tags row" style="flex-wrap:wrap;gap:6px;margin-bottom:12px"></div>
+          <div class="grid-3 vv-product-grid"></div>
+          <div class="row vv-pagination-row" style="justify-content:center;margin-top:16px"></div>
         </div>
       </div>
       ${footerFull}
@@ -621,7 +582,7 @@
       ${navBarMobile}
       <div class="row between"><div class="h1">My cart</div><span class="small mono">3 items</span></div>
       ${callout('Route requires JWT. Anonymous users redirected to /login.','🔒 Auth gate: buyer or higher')}
-      <div class="stack-12">
+      <div class="stack-12 vv-cart-items">
         ${[1,2,3].map(i=>`
           <div class="surface" style="display:grid;grid-template-columns:60px 1fr auto;gap:10px;align-items:center">
             <div class="img-ph" style="width:60px;aspect-ratio:1/1">60</div>
@@ -634,22 +595,17 @@
           </div>
         `).join('')}
       </div>
-      ${callout('Expired item warning: Basil bunch ends in 2 days. Add anyway, but flagged at checkout.','⚠ Expiring soon (&lt;7d)','error')}
+      <div class="vv-cart-warnings"></div>
       <div class="hr"></div>
-      <div class="surface stack-8" style="border-color:#111">
-        <div class="h2">Select pickup window *</div>
-        <div class="select">Sat 1 Jun, 09:00–12:00 (5 slots left)</div>
-        <div class="small" style="color:var(--ink-2)">Pickup window required before checkout</div>
+      <div class="vv-cart-summary">
+        <div class="surface stack-8">
+          <div class="h2">Order summary</div>
+          <div class="row between"><span>Subtotal</span><span class="mono">฿765</span></div>
+          <div class="row between"><span>Service fee</span><span class="mono">฿20</span></div>
+          <div class="row between" style="font-weight:700"><span>Total</span><span class="mono">฿785</span></div>
+          <button class="btn full disabled">Select pickup first</button>
+        </div>
       </div>
-      ${callout('Cart cannot proceed to checkout until pickup_slot_id is set. Button is disabled state.','⚡ Pickup slot required before checkout enabled')}
-      <div class="hr"></div>
-      <div class="surface stack-8">
-        <div class="row between"><span>Subtotal</span><span class="mono">฿765</span></div>
-        <div class="row between"><span>Service fee</span><span class="mono">฿20</span></div>
-        <div class="row between" style="font-weight:700"><span>Total</span><span class="mono">฿785</span></div>
-      </div>
-      <button class="btn full">Proceed to checkout</button>
-      <button class="btn full disabled">Proceed to checkout (select pickup first)</button>
       ${api('PUT /api/cart/:id · POST /api/orders { pickup_slot_id, items }')}
     `,
     desktop:`
@@ -658,34 +614,30 @@
         <div>
           <div class="h1" style="margin-bottom:12px">My cart (3 items)</div>
           ${callout('Route requires JWT. Anonymous users redirected to /login.','🔒 Auth gate: buyer or higher')}
-          <table class="tbl" style="margin-top:12px">
-            <thead><tr><th></th><th>Item</th><th>Size</th><th>Expiry</th><th>Qty</th><th>Price</th><th></th></tr></thead>
-            <tbody>
-              ${[
-                ['Heirloom tomato','M','2026-06-02',1,180,false],
-                ['Basil bunch','S','2026-05-18',2,45,true],
-                ['Free-range eggs','L','2026-06-04',3,180,false],
-              ].map(r=>`
-              <tr>
-                <td><div class="img-ph" style="width:48px;height:48px;aspect-ratio:1/1"></div></td>
-                <td><div style="font-weight:600">${r[0]}</div><div class="small mono">SKU-${String(r[0]).replace(/[^A-Z0-9]/g,'-').slice(0,8)}</div></td>
-                <td><span class="badge">${r[1]}</span></td>
-                <td><span class="tag ${r[5]?'danger':''}">⏳ ${r[2]}</span></td>
-                <td><div class="qty"><span>−</span><span class="n">${r[3]}</span><span>+</span></div></td>
-                <td class="mono">฿${r[3]*r[4]}</td>
-                <td><span class="small" style="text-decoration:underline">🗑</span></td>
-              </tr>`).join('')}
-            </tbody>
-          </table>
-          ${callout('Expired item warning: Basil bunch ends in 2 days. Flagged at checkout.','⚠ Expiring soon (&lt;7d)','error')}
-        </div>
-        <div class="stack-12">
-          <div class="surface stack-8" style="border-color:#111">
-            <div class="h2">Select pickup window *</div>
-            <div class="select">Sat 1 Jun, 09:00–12:00 (5 slots left)</div>
-            <div class="small">Pickup window required before checkout</div>
-            ${api('GET /api/pickup-slots?available=true')}
+          <div class="vv-cart-items">
+            <table class="tbl" style="margin-top:12px">
+              <thead><tr><th></th><th>Item</th><th>Size</th><th>Expiry</th><th>Qty</th><th>Price</th><th></th></tr></thead>
+              <tbody>
+                ${[
+                  ['Heirloom tomato','M','2026-06-02',1,180,false],
+                  ['Basil bunch','S','2026-05-18',2,45,true],
+                  ['Free-range eggs','L','2026-06-04',3,180,false],
+                ].map(r=>`
+                <tr>
+                  <td><div class="img-ph" style="width:48px;height:48px;aspect-ratio:1/1"></div></td>
+                  <td><div style="font-weight:600">${r[0]}</div><div class="small mono">SKU-${String(r[0]).replace(/[^A-Z0-9]/g,'-').slice(0,8)}</div></td>
+                  <td><span class="badge">${r[1]}</span></td>
+                  <td><span class="tag ${r[5]?'danger':''}">⏳ ${r[2]}</span></td>
+                  <td><div class="qty"><span>−</span><span class="n">${r[3]}</span><span>+</span></div></td>
+                  <td class="mono">฿${r[3]*r[4]}</td>
+                  <td><span class="small" style="text-decoration:underline">🗑</span></td>
+                </tr>`).join('')}
+              </tbody>
+            </table>
           </div>
+          <div class="vv-cart-warnings"></div>
+        </div>
+        <div class="stack-12 vv-cart-summary">
           ${callout('Cart cannot proceed until pickup_slot_id is set.','⚡ Pickup slot required before checkout enabled')}
           <div class="surface stack-8">
             <div class="h2">Order summary</div>
@@ -693,8 +645,7 @@
             <div class="row between"><span>Service fee</span><span class="mono">฿20</span></div>
             <div class="hr"></div>
             <div class="row between" style="font-weight:700;font-size:16px"><span>Total</span><span class="mono">฿785</span></div>
-            <button class="btn full">Proceed to checkout</button>
-            <button class="btn full disabled">Disabled state (no slot)</button>
+            <button class="btn full disabled">Select pickup first</button>
           </div>
         </div>
       </div>
@@ -996,19 +947,19 @@
         <div class="row between" style="margin-bottom:16px"><div class="h1">New listing</div><div class="row"><button class="btn ghost">Cancel</button><button class="btn">Save listing</button></div></div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
           <div class="stack-12">
-            <div class="input"><label>Product name *</label><div class="field">Heirloom tomato — Sungold</div></div>
-            <div class="input"><label>Description</label><div class="field" style="height:96px;align-items:flex-start;padding:8px 10px">Sweet, golden cherry tomatoes…</div></div>
+            <div class="input"><label>Product name *</label><input class="field" name="name" value="Heirloom tomato — Sungold"></div>
+            <div class="input"><label>Description</label><textarea class="field" style="height:96px;align-items:flex-start;padding:8px 10px">Sweet, golden cherry tomatoes…</textarea></div>
             <div class="grid-2">
-              <div class="input"><label>Price (฿) *</label><div class="field">180</div></div>
-              <div class="input"><label>Quantity *</label><div class="field">12</div></div>
+              <div class="input"><label>Price (฿) *</label><input class="field" type="number" value="180"></div>
+              <div class="input"><label>Quantity *</label><input class="field" type="number" value="12"></div>
             </div>
             <div class="grid-2">
-              <div class="input"><label>Size *</label><div class="select">M</div></div>
-              <div class="input"><label>Category *</label><div class="select">Vegetable</div></div>
+              <div class="input"><label>Size *</label><select class="field"><option>M</option></select></div>
+              <div class="input"><label>Category *</label><select class="field"><option>Vegetable</option></select></div>
             </div>
             <div class="input error">
               <label>Best before *</label>
-              <div class="field">2026-05-10 📅</div>
+              <input class="field" type="date" value="2026-05-10">
               <div class="help" style="color:var(--error)">Must be a future date</div>
             </div>
             ${callout("size ENUM = ('S','M','L','XL') validated before INSERT.",'⚡ size ENUM validated before MySQL')}

@@ -350,6 +350,7 @@ document.addEventListener('click', e => {
       if(!res.ok){ const txt = await res.text(); throw new Error(txt||res.statusText); }
       // refresh cart
       await fetchCart();
+      if (window.VVRefreshCartPage) window.VVRefreshCartPage();
       announce('Item removed');
     }catch(err){
       window.VVModal && window.VVModal.openModal ? window.VVModal.openModal(`<div style="font-weight:700;margin-bottom:8px">Failed to remove item</div><div style="color:#333;margin-bottom:8px">${esc(err.message||err)}</div>`) : alert('Failed to remove item: '+esc(err.message||err));
@@ -441,7 +442,10 @@ document.addEventListener('click', e => {
         method:'PUT',
         headers:{'Content-Type':'application/json'},
         body: JSON.stringify({ quantity: val })
-      }).then(fetchCart).catch(err => {
+      }).then(() => {
+        fetchCart();
+        if (window.VVRefreshCartPage) window.VVRefreshCartPage();
+      }).catch(err => {
         announce('Unable to update quantity');
         console.error('Quantity update failed', err);
       });
